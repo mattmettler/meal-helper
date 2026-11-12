@@ -29,7 +29,7 @@
 
 Failure modes the spec implies that its own tests would not catch, most likely first. Each has a test in the task named in brackets.
 
-1. A user adds a custom option with a blank name, a name already used in that step, or a note over 40 characters. They expect a gentle message and nothing saved. [Task 5, Task 13]
+1. A user adds a custom option with a blank name or a note over 40 characters. They expect a gentle message and nothing saved. [Task 5, Task 13]
 2. Picks that no longer make sense: the user goes Back and changes an earlier pick so a later pick now clashes, or an option vanishes (hidden, or replaced by an import). They expect the stale picks dropped, never a crash or a meal naming a missing option. [Task 3, Task 4]
 3. A truncated, non-JSON, wrong-version, or duplicate-id backup file. They expect an error message and their existing data untouched. [Task 8, Task 15]
 4. A browser without `navigator.storage.persist`. They expect the app to keep working. [Task 8]
@@ -42,7 +42,7 @@ src/logic/        types.ts steps.ts copy.ts validate.ts catalog.ts filtering.ts
                   inputRules.ts name.ts tips.ts meal.ts backupReminder.ts
 src/content/      seed.ts                       (built-in options, pairs, tips)
 src/storage/      db.ts userData.ts savedMeals.ts backup.ts settings.ts instance.ts
-src/ui/           App.tsx TabBar.tsx theme.css stepTheme.ts useCatalog.ts readFileText.ts shareFile.ts
+src/ui/           App.tsx TabBar.tsx theme.css stepTheme.ts useCatalog.ts readFileText.ts downloadFile.ts
 src/ui/screens/   Build.tsx Result.tsx Saved.tsx SavedDetail.tsx Options.tsx OptionAdd.tsx
                   Compatibility.tsx OptionDetail.tsx HiddenOptions.tsx BackupExport.tsx
                   BackupImport.tsx BackupReminder.tsx
@@ -71,7 +71,7 @@ export type StepId = 'starch' | 'greens' | 'protein' | 'veggies' | 'sauces' | 'g
 export interface Step { id: StepId; name: string; multi: boolean }
 export interface Option { id: string; stepId: StepId; name: string; note?: string; isCustom: boolean; hidden: boolean }
 export interface Pair { a: string; b: string }
-export interface Tip { id: string; optionId: string; text: string; order: number; isCustom: boolean }
+export interface Tip { id: string; optionId: string; text: string; isCustom: boolean }
 export interface Catalog { options: Option[]; pairs: Pair[]; tips: Tip[] }
 export type Picks = Record<StepId, string[]>          // option ids in pick order
 export interface MealItem { optionName: string; tips: string[] }
@@ -81,11 +81,11 @@ export interface SavedMeal extends Meal { id: string; isFavorite: boolean; creat
 export interface Seed {
   options: Array<{ id: string; stepId: StepId; name: string; note?: string }>
   pairs: Pair[]
-  tips: Array<{ id: string; optionId: string; text: string; order: number }>
+  tips: Array<{ id: string; optionId: string; text: string }>   // built-in tips keep their array order
 }
 export interface CustomOptionRow { id: string; stepId: StepId; name: string; note?: string; deleted: boolean }
 export interface UserPairRow { id: string; optionIdA: string; optionIdB: string }
-export interface UserTipRow { id: string; optionId: string; text: string; order: number }
+export interface UserTipRow { id: number; optionId: string; text: string }   // id auto-increments, so rows come back in the order added
 export interface UserData {
   customOptions: CustomOptionRow[]; hiddenBuiltIns: string[]
   userPairs: UserPairRow[]; userTips: UserTipRow[]
@@ -138,7 +138,7 @@ export interface UserData {
 **Interfaces:**
 - Consumes: `Seed`, `UserData`, `Catalog`, `Option`, `Picks`, `StepId`, `STEPS`.
 - Produces:
-  - `buildCatalog(seed: Seed, user: UserData): Catalog` — built-in options (`isCustom: false`) followed by custom options (`isCustom: true`) in input order. `hidden` is true for ids in `hiddenBuiltIns` and for custom rows with `deleted: true`. Pairs and tips from both sources are combined (user tips get `isCustom: true`).
+  - `buildCatalog(seed: Seed, user: UserData): Catalog` — built-in options (`isCustom: false`) followed by custom options (`isCustom: true`) in input order. `hidden` is true for ids in `hiddenBuiltIns` and for custom rows with `deleted: true`. Pairs and tips from both sources are combined: seed tips in seed order, then user tips in row order (user tips get `isCustom: true` and `id: String(row.id)`).
   - `availableOptions(catalog: Catalog, stepId: StepId, picks: Picks): Option[]` — options of that step that are not hidden and have no pair with any option picked in an earlier step or earlier in the same step. Picks in later steps are ignored. Options already picked in this step stay available.
   - `prunePicks(catalog: Catalog, picks: Picks): Picks` — walks steps in order and keeps a pick only if its option exists, is not hidden, and is still available given the picks already kept.
 
@@ -161,7 +161,7 @@ export interface UserData {
 - Consumes: `Catalog`, `Picks`, `Meal`, `Tip`, `STEPS`.
 - Produces:
   - `buildMealName(catalog: Catalog, picks: Picks): string`
-  - `tipsFor(catalog: Catalog, optionId: string): string[]` — built-in tips first (by `order`), then user tips (by `order`).
+  - `tipsFor(catalog: Catalog, optionId: string): string[]` — the text of every tip for that option, in catalog order (built-in tips first, then the user's in the order added).
   - `buildMeal(catalog: Catalog, picks: Picks): Meal` — `name` from `buildMealName`; `groups` in step order, only steps with at least one known pick; `items` in pick order; ids missing from the catalog are skipped.
 
 - [ ] **Step 1: Write failing tests in `name.test.ts`** (test catalog of readable names):
@@ -171,7 +171,7 @@ export interface UserData {
   - List order is Protein, then Greens, then Filler Veggies, regardless of pick time.
   - Sauces and garnish never appear in the name.
   - Starch with no list → `Rice Meal`; nothing nameable (no picks, or only sauces) → `Meal`.
-- [ ] **Step 2: Write failing tests in `tips.test.ts` and `meal.test.ts`:** built-in tips precede user tips and each group is sorted by `order`; an option with no tips returns `[]`; `buildMeal` groups follow step order with `stepName` from `STEPS`; unknown ids are ignored and a step with only unknown ids is omitted; `buildMeal(...).name` equals `buildMealName(...)`.
+- [ ] **Step 2: Write failing tests in `tips.test.ts` and `meal.test.ts`:** built-in tips precede user tips and each keeps its catalog order; an option with no tips returns `[]`; `buildMeal` groups follow step order with `stepName` from `STEPS`; unknown ids are ignored and a step with only unknown ids is omitted; `buildMeal(...).name` equals `buildMealName(...)`.
 - [ ] **Step 3: Run the three files.** Expected: FAIL.
 - [ ] **Step 4: Implement** the three functions with the signatures above.
 - [ ] **Step 5: Run the three files.** Expected: PASS.
@@ -189,10 +189,10 @@ export interface UserData {
 - Consumes: `Catalog`, `StepId`.
 - Produces:
   - `NOTE_MAX_LENGTH = 40`
-  - `validateOptionInput(catalog: Catalog, input: { stepId: StepId; name: string; note?: string }, editingOptionId?: string): string | null` — returns a user-facing message or `null`. Messages: blank (after trim) → `Give it a name`; same name (trimmed, case-insensitive) as another option in that step, hidden or not, other than `editingOptionId` → `That name is already in this step`; note over 40 characters (after trim) → `Keep the note to 40 characters or fewer`.
+  - `validateOptionInput(input: { name: string; note?: string }): string | null` — returns a user-facing message or `null`. Messages: blank name (after trim) → `Give it a name`; note over 40 characters (after trim) → `Keep the note to 40 characters or fewer`. Duplicate names are allowed.
   - `validateTipText(text: string): string | null` — blank after trim → `Write a tip first`.
 
-- [ ] **Step 1: Write failing tests:** blank and whitespace-only names rejected with the exact message; duplicate name differing only by case/whitespace rejected, including against a hidden option; the same name in a different step accepted; editing an option may keep its own name; a 40-character note passes and a 41-character note fails; a missing note passes; `validateTipText` rejects `''` and `'   '`, accepts text.
+- [ ] **Step 1: Write failing tests:** blank and whitespace-only names rejected with the exact message; a 40-character note passes and a 41-character note fails; a missing note passes; `validateTipText` rejects `''` and `'   '`, accepts text.
 - [ ] **Step 2: Run `npx vitest run src/logic/inputRules.test.ts`.** Expected: FAIL.
 - [ ] **Step 3: Implement** both functions.
 - [ ] **Step 4: Run the test.** Expected: PASS.
@@ -226,17 +226,17 @@ export interface UserData {
 **Interfaces:**
 - Consumes: row types from `types.ts`, `SavedMeal`, `StepId`.
 - Produces:
-  - `class MealGuideDb extends Dexie` with tables `customOptions` (`'id, stepId'`), `hiddenBuiltIns` (`'optionId'`), `userPairs` (`'id, optionIdA, optionIdB'`), `userTips` (`'id, optionId'`), `savedMeals` (`'id, createdAt'`), `settings` (`'key'`, rows `{ key: string; value: unknown }`).
+  - `class MealGuideDb extends Dexie` with tables `customOptions` (`'id, stepId'`), `hiddenBuiltIns` (`'optionId'`), `userPairs` (`'id, optionIdA, optionIdB'`), `userTips` (`'++id, optionId'`), `savedMeals` (`'id, createdAt'`), `settings` (`'key'`, rows `{ key: string; value: unknown }`).
   - `createDb(name?: string): MealGuideDb` (default name `'meal-guide'`); `instance.ts` exports `db = createDb()`.
   - `loadUserData(db): Promise<UserData>`
   - `addCustomOption(db, input: { stepId: StepId; name: string; note?: string }): Promise<string>` — trims, stores `deleted: false`, returns a UUID.
   - `updateCustomOptionNote(db, optionId: string, note?: string): Promise<void>`
   - `setOptionHidden(db, option: Option, hidden: boolean): Promise<void>` — custom: toggles `deleted`; built-in: adds or removes the `hiddenBuiltIns` row.
   - `setClashes(db, optionId: string, otherIds: string[]): Promise<void>` — replaces every `userPairs` row involving `optionId` with one row per distinct id in `otherIds` (ignoring `optionId` itself).
-  - `addUserTip(db, optionId: string, text: string): Promise<void>` — trims, `order` = highest existing user order for that option plus one (starting at 1).
-  - `deleteUserTip(db, tipId: string): Promise<void>`
+  - `addUserTip(db, optionId: string, text: string): Promise<void>` — trims and appends (the table's auto-increment key keeps insertion order).
+  - `deleteUserTip(db, tipId: string): Promise<void>` (`tipId` is `String(row.id)`; convert back to a number for the table key)
 
-- [ ] **Step 1: Write failing tests** (each opens `createDb(uniqueName)`, and persistence tests close and reopen the same name): added custom option persists across reopen; `updateCustomOptionNote` persists and clears with `undefined`; hiding a built-in persists and unhiding removes the row; hiding then restoring a custom option toggles `deleted`; `setClashes` replaces earlier pairs involving the option, keeps pairs not involving it, dedupes, and ignores the option's own id; tips get increasing `order` and `deleteUserTip` removes only that tip; hiding an option leaves its pairs and tips in place.
+- [ ] **Step 1: Write failing tests** (each opens `createDb(uniqueName)`, and persistence tests close and reopen the same name): added custom option persists across reopen; `updateCustomOptionNote` persists and clears with `undefined`; hiding a built-in persists and unhiding removes the row; hiding then restoring a custom option toggles `deleted`; `setClashes` replaces earlier pairs involving the option, keeps pairs not involving it, dedupes, and ignores the option's own id; tips come back in the order added and `deleteUserTip` removes only that tip; hiding an option leaves its pairs and tips in place.
 - [ ] **Step 2: Run `npx vitest run src/storage/userData.test.ts`.** Expected: FAIL.
 - [ ] **Step 3: Implement** `db.ts`, `userData.ts`, `instance.ts`.
 - [ ] **Step 4: Run the test.** Expected: PASS.
@@ -262,7 +262,7 @@ export interface UserData {
 - [ ] **Step 1: Write failing tests.**
   - Saved meals: saving stores the snapshot text; hiding a custom option or deleting a user tip afterwards leaves the saved meal unchanged; list order is favorites first then newest (two favorites and two non-favorites with explicit `now`); favorite persists across close/reopen; delete removes only that meal.
   - Settings: `getLastBackupAt` is `null` initially and returns the recorded time; `requestPersistence` returns `granted`/`denied` from a stub object with a `persist()` method, records it, and returns `unsupported` for `undefined` and for `{}`.
-  - Backup: export then import into a fresh db round-trips every table; export has no `settings` content; import replaces data (rows only in the old db are gone); `parseBackup` returns `ok: false` with the message `That doesn't look like a backup from this app` for invalid JSON, truncated JSON, `null`, an array, the wrong `app`, a missing table, a non-array table, and a row with a wrong field type (`savedMeals[0].groups` not an array); for `formatVersion: 2` it returns `ok: false` with `This backup is from a newer version of the app`; duplicate ids within one table return `ok: false`; `importBackup` of a file with duplicate ids (bypassing `parseBackup`) rejects and leaves the existing data intact; `summarizeBackup` counts match.
+  - Backup: export then import into a fresh db round-trips every table (user tips keep their ids and order); export has no `settings` content; import replaces data (rows only in the old db are gone); `parseBackup` returns `ok: false` with the message `That doesn't look like a backup from this app` for invalid JSON, truncated JSON, `null`, an array, the wrong `app`, a missing table, a non-array table, and a row with a wrong field type (`savedMeals[0].groups` not an array); for `formatVersion: 2` it returns `ok: false` with `This backup is from a newer version of the app`; duplicate ids within one table return `ok: false`; `importBackup` of a file with duplicate ids (bypassing `parseBackup`) rejects and leaves the existing data intact; `summarizeBackup` counts match.
 - [ ] **Step 2: Run the three files.** Expected: FAIL.
 - [ ] **Step 3: Implement.** `parseBackup` validates by hand (no schema library) and never touches the database.
 - [ ] **Step 4: Run the three files.** Expected: PASS.
@@ -300,7 +300,7 @@ export interface UserData {
 **Files:**
 - Create: `src/ui/theme.css`, `src/ui/stepTheme.ts`, `src/ui/TabBar.tsx`, `src/ui/useCatalog.ts`, `src/ui/App.tsx`
 - Modify: `src/main.tsx`, `index.html` (title `Improvised Meal Guide`, viewport with `viewport-fit=cover`)
-- Test: `src/ui/theme.test.ts`, `src/ui/useCatalog.test.tsx`, `src/ui/App.test.tsx`
+- Test: `src/ui/useCatalog.test.tsx`, `src/ui/App.test.tsx`
 
 **Interfaces:**
 - Consumes: `SEED`, `buildCatalog`, `loadUserData`, `db`/`MealGuideDb`.
@@ -310,10 +310,10 @@ export interface UserData {
   - `<TabBar tab onChange />` with tabs Build, Saved, Options (labels exactly these, 🥣 💛 🌿).
   - `<App />` holds the current tab in state, builds the catalog, and renders the screens from Tasks 11 to 15.
 
-- [ ] **Step 1: Write failing tests.** `theme.test.ts`: reads `theme.css` text and asserts it contains every color token and step fill/shade value from spec section 5.1 (`#FBF6EE`, `#4A4458`, `#8A8497`, `#EDE4D6`, and the six fill and six shade values). `useCatalog.test.tsx`: `renderHook` with a fresh `createDb` returns `undefined` then a catalog containing seed options; after `addCustomOption` the hook returns a catalog that includes the new option. `App.test.tsx`: renders the three tab labels; clicking Saved and Options switches the visible heading; no visible text contains "bowl".
-- [ ] **Step 2: Run the three files.** Expected: FAIL.
-- [ ] **Step 3: Implement.** Port the visual styles from `docs/mockups/mockup-v1.html` and `mockup-v2.html` into `theme.css` (tokens on `:root`, rounded system font stack, 44px minimum tap targets, safe-area padding for the tab bar). No external fonts or URLs. `App.tsx` shows a plain loading state while the catalog is `undefined`. Navigation is plain state in each tab, no router library.
-- [ ] **Step 4: Run the three files.** Expected: PASS. Run `npm run dev` and check the shell in a mobile-width browser window.
+- [ ] **Step 1: Write failing tests.** `useCatalog.test.tsx`: `renderHook` with a fresh `createDb` returns `undefined` then a catalog containing seed options; after `addCustomOption` the hook returns a catalog that includes the new option. `App.test.tsx`: renders the three tab labels; clicking Saved and Options switches the visible heading; no visible text contains "bowl".
+- [ ] **Step 2: Run the two files.** Expected: FAIL.
+- [ ] **Step 3: Implement.** Port the visual styles (copy the color values from spec section 5.1 exactly) from `docs/mockups/mockup-v1.html` and `mockup-v2.html` into `theme.css` (tokens on `:root`, rounded system font stack, 44px minimum tap targets, safe-area padding for the tab bar). No external fonts or URLs. `App.tsx` shows a plain loading state while the catalog is `undefined`. Navigation is plain state in each tab, no router library.
+- [ ] **Step 4: Run the two files.** Expected: PASS. Run `npm run dev` and check the shell in a mobile-width browser window.
 - [ ] **Step 5: Commit** `feat: add app shell, theme, and catalog hook`.
 
 ---
@@ -378,10 +378,10 @@ export interface UserData {
 - Consumes: `Catalog`, `validateOptionInput`, `NOTE_MAX_LENGTH`, `addCustomOption`, `setClashes`.
 - Produces:
   - `<Options catalog onOpenOption={(id) => void} onAdd onOpenHidden onOpenBackup reminder: ReminderState />` — options grouped by step, add link per step, `Hidden options (N)` link, a backup entry showing `Last backed up N days ago` (or `Never backed up`) with the `BackupReminder` banner above it, and the credit text.
-  - `<OptionAdd catalog onNext={(input: { stepId: StepId; name: string; note?: string }) => void} onBack />`
+  - `<OptionAdd onNext={(input: { stepId: StepId; name: string; note?: string }) => void} onBack />`
   - `<Compatibility catalog optionName stepId initialChecked={string[]} excludeOptionId? onSave={(checkedIds: string[]) => void} onBack />` — every other option grouped by step with checkboxes.
 
-- [ ] **Step 1: Write failing tests.** `OptionAdd`: blank name shows `Give it a name` and does not call `onNext`; a duplicate name in the chosen step shows `That name is already in this step`; a 41-character note shows `Keep the note to 40 characters or fewer`; the counter reads `15 / 40` for a 15-character note; the preview card shows the typed name and note; a valid form calls `onNext` with the trimmed name. `Compatibility`: initial checks reflect `initialChecked`; toggling updates the label `Save option (N checked)`; `Save` calls `onSave` with the checked ids; the option being edited is not listed. `Options`: groups render per step; a custom option has the `your own` marker; the backup entry shows `Last backed up 12 days ago` for a timestamp 12 days old and `Never backed up` for `null`; credit text shows exactly `Icon image from vecteezy.com` and `Made by Matt for kestrel <3` as two separate lines at the bottom.
+- [ ] **Step 1: Write failing tests.** `OptionAdd`: blank name shows `Give it a name` and does not call `onNext`; a 41-character note shows `Keep the note to 40 characters or fewer`; the counter reads `15 / 40` for a 15-character note; the preview card shows the typed name and note; a valid form calls `onNext` with the trimmed name. `Compatibility`: initial checks reflect `initialChecked`; toggling updates the label `Save option (N checked)`; `Save` calls `onSave` with the checked ids; the option being edited is not listed. `Options`: groups render per step; a custom option has the `your own` marker; the backup entry shows `Last backed up 12 days ago` for a timestamp 12 days old and `Never backed up` for `null`; credit text shows exactly `Icon image from vecteezy.com` and `Made by Matt for kestrel <3` as two separate lines at the bottom.
 - [ ] **Step 2: Run the two files.** Expected: FAIL.
 - [ ] **Step 3: Implement** the three screens per mockup-v1 and mockup-v2. `App` chains add → compatibility → save: `addCustomOption` then `setClashes`.
 - [ ] **Step 4: Run the two files.** Expected: PASS.
@@ -397,7 +397,7 @@ export interface UserData {
 - Test: `src/ui/screens/OptionDetail.test.tsx`, `src/ui/screens/HiddenOptions.test.tsx`
 
 **Interfaces:**
-- Consumes: `Catalog`, `Option`, `validateOptionInput`, `validateTipText`, `updateCustomOptionNote`, `setClashes`, `addUserTip`, `deleteUserTip`, `setOptionHidden`.
+- Consumes: `Catalog`, `Option`, `validateOptionInput` (called as `validateOptionInput({ name: option.name, note })` when saving a note), `validateTipText`, `updateCustomOptionNote`, `setClashes`, `addUserTip`, `deleteUserTip`, `setOptionHidden`.
 - Produces:
   - `<OptionDetail catalog optionId onSaveNote={(note?: string) => void} onEditClashes onAddTip={(text: string) => void} onDeleteTip={(tipId: string) => void} onHide onBack />`
   - `<HiddenOptions catalog onRestore={(optionId: string) => void} onBack />`
@@ -413,7 +413,7 @@ export interface UserData {
 ### Task 15: Backup export, import, and reminder screens
 
 **Files:**
-- Create: `src/ui/screens/BackupExport.tsx`, `src/ui/screens/BackupImport.tsx`, `src/ui/readFileText.ts`, `src/ui/shareFile.ts`
+- Create: `src/ui/screens/BackupExport.tsx`, `src/ui/screens/BackupImport.tsx`, `src/ui/readFileText.ts`, `src/ui/downloadFile.ts`
 - Modify: `src/ui/App.tsx`, `src/main.tsx` (call `requestPersistence(db)` once at startup, ignoring the result in the UI)
 - Test: `src/ui/screens/BackupExport.test.tsx`, `src/ui/screens/BackupImport.test.tsx`
 
@@ -421,13 +421,13 @@ export interface UserData {
 - Consumes: `exportBackup`, `serializeBackup`, `parseBackup`, `summarizeBackup`, `importBackup`, `recordBackupExport`, `getLastBackupAt`.
 - Produces:
   - `readFileText(file: Blob): Promise<string>` (via `FileReader`).
-  - `shareFile(file: File): Promise<boolean>` — uses `navigator.share({ files })` when `navigator.canShare?.({ files })` is true, otherwise downloads through an anchor. Returns false if the user cancels.
+  - `downloadFile(file: File): void` — triggers a browser download through a temporary anchor and object URL, then revokes the URL.
   - `<BackupExport summary lastBackupAt fileName onSave={() => Promise<void>} onBack />`; `<BackupImport currentSummary onReplace={(file: BackupFile) => Promise<void>} onBack />`.
   - Backup file name: `meal-guide-backup-YYYY-MM-DD.json`.
 
 - [ ] **Step 1: Write failing tests.** `BackupExport`: shows the five counts, the file name, and `Last backed up N days ago` (or `Never backed up`); `Save backup file` calls `onSave`. `BackupImport`: picking a valid backup file shows its counts and the warning naming what will be replaced; `Replace my data` calls `onReplace` with the parsed file and then shows `All restored!`; `Cancel` calls nothing; picking non-JSON, truncated JSON, and a wrong-version file each shows the error text and calls nothing (`Hmm, that doesn't look like one of my backups.` for the first two, the newer-version message for the third).
 - [ ] **Step 2: Run the two files.** Expected: FAIL.
-- [ ] **Step 3: Implement** the screens per mockup-v2. `shareFile` is thin browser glue and has no automated test (real share and download behavior is covered by the device checklist in Task 17). After a successful `shareFile`, `App` calls `recordBackupExport`. After `importBackup` succeeds, `App` resets the in-progress build state.
+- [ ] **Step 3: Implement** the screens per mockup-v2. `downloadFile` is thin browser glue and has no automated test (real download behavior is covered by the device checklist in Task 17). `App` calls `recordBackupExport` right after `downloadFile`. The Web Share sheet is not built; add it only if the device checklist shows downloads don't work in an installed iOS app. After `importBackup` succeeds, `App` resets the in-progress build state.
 - [ ] **Step 4: Run the two files.** Expected: PASS.
 - [ ] **Step 5: Commit** `feat: add backup export and import screens`.
 
@@ -458,7 +458,7 @@ export interface UserData {
 **Files:**
 - Create: `.github/workflows/deploy.yml`, `docs/device-checklist.md`
 
-- [ ] **Step 1: Write `docs/device-checklist.md`** from spec section 8 and the open items: install on a real iOS device and a real Android device; launch from the home-screen icon in standalone mode; airplane-mode use of every feature (build, save, favorite, add option, add tip, hide, export, import); data persists after fully closing and reopening; the `storage.persist()` result on iOS; export and import through the real share sheet or download on both platforms (`shareFile`); emoji tab icons and hearts look acceptable on both platforms; icon looks right on both home screens; the app works when the host is unreachable after install.
+- [ ] **Step 1: Write `docs/device-checklist.md`** from spec section 8 and the open items: install on a real iOS device and a real Android device; launch from the home-screen icon in standalone mode; airplane-mode use of every feature (build, save, favorite, add option, add tip, hide, export, import); data persists after fully closing and reopening; the `storage.persist()` result on iOS; export downloads a file that can be found and re-imported on both platforms (if an installed iOS app blocks the download, add `navigator.share` with files in `downloadFile` and record the decision in the spec); emoji tab icons and hearts look acceptable on both platforms; icon looks right on both home screens; the app works when the host is unreachable after install.
 - [ ] **Step 2: Write `.github/workflows/deploy.yml`** that on push to `main` installs dependencies, runs `npm test` and `npm run verify:build`, and publishes `dist/` to GitHub Pages using the official Pages actions. Check each action's current major version before pinning.
 - [ ] **Step 3: Stop and ask Matt before pushing the workflow or enabling Pages.** Publishing makes the app reachable on the internet, and Pages on a private repository may need a paid plan. Matt sets Pages "Source" to "GitHub Actions" in the repository settings.
 - [ ] **Step 4: After Matt approves and enables Pages, push, and confirm** the workflow run is green and the site loads at its Pages URL with the service worker registering.

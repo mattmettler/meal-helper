@@ -75,7 +75,7 @@ A pair is symmetric: it stores two option ids and applies in whichever order the
 `buildMeal(picks)` returns:
 
 - **name**: see 3.4,
-- **groups**: for each step with picks, the picked options in order, each with its tips (text only, ordered by tip order).
+- **groups**: for each step with picks, the picked options in order, each with its tips (text only: built-in tips in content-file order, then the user's tips in the order they were added).
 
 No other content is generated.
 
@@ -107,7 +107,7 @@ Three layers.
 | customOptions | id (UUID), stepId, name, note (optional), deleted |
 | hiddenBuiltIns | optionId (built-in options the user deleted) |
 | userPairs | id, optionIdA, optionIdB |
-| userTips | id, optionId, text, order |
+| userTips | id (auto-increment), optionId, text |
 | savedMeals | id, name, groups (step name, option names, tip texts as plain text), isFavorite, createdAt |
 
 Every option, built-in or custom, has an optional `note`: a few words shown on the option's card in the build step to add context (for example Sesame Seeds: "adds texture and good fats"). The field exists on all options to keep the schema uniform. The built-in content will fill it mainly for Sauces and Garnish/Texture. Notes are limited to about 40 characters so they fit on two lines, appear only on the step screen (not on the result screen or in saved meals, where tips do that job), and are fixed on built-in options. The user can edit the note on their own custom options.
@@ -171,7 +171,7 @@ Each step owns one soft color (fill) and a deeper shade (borders, tip rules). Th
 - Hosted on GitHub Pages. The Vite `base` path must match the repository name.
 - Updates reach a phone when the app is opened online and the new service worker activates.
 - On first launch call `navigator.storage.persist()` and record the result. iOS behavior for home-screen apps must be verified on a real device before relying on it.
-- Export writes one JSON file with the five user-data tables and a format version. Import validates version and shape before wiping anything, then replaces local user data after a confirm.
+- Export writes one JSON file with the five user-data tables and a format version. Import validates version and shape before wiping anything, then replaces local user data after a confirm. The file is saved with a plain browser download. Add the Web Share sheet only if downloading doesn't work in an installed iOS app.
 - The app shows a gentle reminder when no backup exists and a meal is saved, or when the last backup is over 30 days old.
 - Residual risk: if iOS evicts the service worker cache itself, the app cannot reload offline until reinstalled from the fallback host. Backups protect data, not the app.
 
@@ -194,6 +194,7 @@ The PRD section 9 enhancements stay out: editing option names, reordering, optio
 ## 10. Open items
 
 - Verify `navigator.storage.persist()` and home-screen eviction behavior on a real iOS device.
+- Verify that the backup file download works in installed iOS and Android apps; if not, add the Web Share sheet.
 - Author supplies final content lists after the app works.
 - Mockup not yet drawn: the saved-meal detail view.
 - Dark mode is undecided. The first release ships light only unless the author asks for it.
