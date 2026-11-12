@@ -127,6 +127,47 @@ describe('Build', () => {
     expect(screen.getByRole('button', { name: /^Rice/ })).toHaveAttribute('aria-pressed', 'false')
   })
 
+  describe('when the catalog changes mid-build', () => {
+    const spinachHidden: Catalog = {
+      ...catalog,
+      options: catalog.options.map(o => (o.id === 'spinach' ? { ...o, hidden: true } : o)),
+    }
+    const spinachGone: Catalog = {
+      ...catalog,
+      options: catalog.options.filter(o => o.id !== 'spinach'),
+    }
+
+    async function pickRiceAndSpinachThenChange(changed: Catalog) {
+      const user = userEvent.setup()
+      const { rerender } = render(<Build catalog={catalog} onSave={() => {}} />)
+      await pick(user, /^Rice/)
+      await pick(user, 'Next')
+      await pick(user, 'Spinach')
+      await pick(user, 'Next')
+      rerender(<Build catalog={changed} onSave={() => {}} />)
+      await pick(user, /Back/)
+      return user
+    }
+
+    it.each([['hidden', spinachHidden], ['gone', spinachGone]])('drops a pick that is now %s', async (_label, changed) => {
+      const user = await pickRiceAndSpinachThenChange(changed)
+      expect(screen.queryByRole('button', { name: 'Spinach' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Skip' })).toBeInTheDocument()
+      for (let i = 0; i < 4; i++) await pick(user, /^(Next|Skip)$/)
+      await pick(user, 'Finish')
+      expect(screen.getByText(TOO_THIN_MESSAGE)).toBeInTheDocument()
+    })
+
+    it('keeps a hidden pick out of the finished meal', async () => {
+      const user = await pickRiceAndSpinachThenChange(spinachHidden)
+      await pick(user, 'Kale')
+      for (let i = 0; i < 4; i++) await pick(user, /^(Next|Skip)$/)
+      await pick(user, 'Finish')
+      expect(screen.queryByText('Spinach')).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Name your meal')).toHaveValue('Rice Meal with Kale')
+    })
+  })
+
   it('shows the prefilled name and tips under each pick', async () => {
     const user = renderBuild()
     await finishWith(user, [/^Rice/, 'Kale'])

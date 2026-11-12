@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { TOO_THIN_MESSAGE } from '../../logic/copy'
 import { availableOptions, prunePicks } from '../../logic/filtering'
 import { buildMeal } from '../../logic/meal'
@@ -17,9 +17,10 @@ type Phase = 'building' | 'result' | 'too-thin'
 
 export function Build({ catalog, onSave }: BuildProps) {
   const [stepIndex, setStepIndex] = useState(0)
-  const [picks, setPicks] = useState(emptyPicks)
+  const [rawPicks, setPicks] = useState(emptyPicks)
   const [phase, setPhase] = useState<Phase>('building')
   const [saveFailed, setSaveFailed] = useState(false)
+  const picks = useMemo(() => prunePicks(catalog, rawPicks), [catalog, rawPicks])
 
   const step = STEPS[stepIndex]
   const options = availableOptions(catalog, step.id, picks)
