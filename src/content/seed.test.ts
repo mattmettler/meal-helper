@@ -7,6 +7,7 @@ import type { UserData } from '../logic/types'
 const noUserData: UserData = { customOptions: [], hiddenBuiltIns: [], userPairs: [], userTips: [] }
 const optionIds = new Set(SEED.options.map(o => o.id))
 const forbiddenWord = /\b(bowl|recipe)\b/i
+const quantity = /\d|\b(cups?|tablespoons?|teaspoons?|tbsp|tsp|ounces?|oz|grams?|pounds?|lbs?|degrees?|pinch|splash|dash|handful)\b/i
 
 describe('seed content', () => {
   it('has unique ids, and each option id starts with its step id and a dot', () => {
@@ -45,6 +46,10 @@ describe('seed content', () => {
       expect(count, o.id).toBeGreaterThanOrEqual(1)
       expect(count, o.id).toBeLessThanOrEqual(2)
     }
+  })
+
+  it.each(SEED.tips.map(t => [t.id, t.text]))('tip %s has no quantities', (_id, text) => {
+    expect(text).not.toMatch(quantity)
   })
 
   it('keeps notes within 40 characters and requires them for sauces and garnishes', () => {
