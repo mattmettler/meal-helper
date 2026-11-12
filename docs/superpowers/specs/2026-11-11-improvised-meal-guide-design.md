@@ -159,7 +159,7 @@ Each step owns one soft color (fill) and a deeper shade (borders, tip rules). Th
 - Rounded system font stack (`ui-rounded`, `SF Pro Rounded`, `Nunito`, `Segoe UI`, `system-ui`). No font files or remote fonts, per the offline requirement.
 - Selected option cards fill with the step color, show a check mark, and darken their border.
 
-**Brand:** the kestrel icon sits in each screen header. A larger version appears on the "too thin" message screen. Source art is in `assets/icon/`. Generated app icons need a solid background color (iOS fills transparent areas with black) and the artwork inside the central 80% of the canvas.
+**Brand:** the kestrel icon sits in each screen header. A larger version appears on the "too thin" message screen. Source art is in `assets/icon/`: the original EPS, a raw render with a white background (`icon-source-1024.png`), and the app icon (`icon-1024.png`) with a solid Starch yellow (`#F6E3A1`) background, made by `scripts/set-icon-background.py`. The app icon must be opaque (iOS fills transparent areas with black) and keep the artwork inside the central 80% of the canvas.
 
 **Copy:** the thing the user makes is always called a "meal", never a "bowl" or "recipe".
 
@@ -197,4 +197,3 @@ The PRD section 9 enhancements stay out: editing option names, reordering, optio
 - Author supplies final content lists after the app works.
 - Mockups not yet drawn: the add-option compatibility checklist, the add-tip screen, and the saved-meal detail view.
 - Dark mode is undecided. The first release ships light only unless the author asks for it.
-- Choose the solid background color for the generated app icons.

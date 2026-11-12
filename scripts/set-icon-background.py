@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+"""Replace the white background around dark artwork in a PNG with a solid color.
+
+Only the white region connected to the image corner (the background) is
+recolored. Enclosed white areas inside the artwork (a bird's face, belly,
+wing stripes) stay white. Edge pixels are blended so there is no white halo.
+
+Standard library only. Reads an 8-bit, non-interlaced RGB or RGBA PNG and
+writes an opaque RGB PNG.
+
+Example:
+  python scripts/set-icon-background.py assets/icon/icon-source-1024.png \\
+      assets/icon/icon-1024.png --color F6E3A1
+"""
+import argparse
+import struct
+import sys
+import zlib
+from collections import deque
+
+OUTSIDE_THRESHOLD = 128  # lightness above this counts as background when flood filling
+EDGE_GROW_PIXELS = 2     # how far past the flood fill to blend antialiased edge pixels
+
+
+def fail(message):
+    sys.exit(f"error: {message}")
+
+
+def read_png(path):
+    data = open(path, "rb").read()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        fail(f"{path} is not a PNG file")
+    pos, idat, header = 8, b"", None
+    while pos < len(data):
+        length, kind = struct.unpack(">I4s", data[pos:pos + 8])
+        body = data[pos + 8:pos + 8 + length]
+        if kind == b"IHDR":
+            header = struct.unpack(">IIBBBBB", body)
+        elif kind == b"IDAT":
+            idat += body
+        pos += 12 + length
+    width, height, bit_depth, color_type, _, _, interlace = header
+    if bit_depth != 8 or interlace != 0 or color_type not in (2, 6):
+        fail(f"unsupported PNG (bit depth {bit_depth}, color type {color_type}, "
+             f"interlace {interlace}); need 8-bit RGB or RGBA, not interlaced")
+    channels = 3 if color_type == 2 else 4
+    return width, height, channels, unfilter(zlib.decompress(idat), width, height, channels)
+
+
+def unfilter(raw, width, height, channels):
+    stride = width * channels
+    out = bytearray(height * stride)
+    for y in range(height):
+        ftype = raw[y * (stride + 1)]
+        line = raw[y * (stride + 1) + 1:(y + 1) * (stride + 1)]
+        cur = y * stride
+        prev = cur - stride
+        for i in range(stride):
+            left = out[cur + i - channels] if i >= channels else 0
+            up = out[prev + i] if y else 0
+            upleft = out[prev + i - channels] if (y and i >= channels) else 0
+            if ftype == 0:
+                add = 0
+            elif ftype == 1:
+                add = left
+            elif ftype == 2:
+                add = up
+            elif ftype == 3:
+                add = (left + up) >> 1
+            elif ftype == 4:
+                p = left + up - upleft
+                pa, pb, pc = abs(p - left), abs(p - up), abs(p - upleft)
+                add = left if (pa <= pb and pa <= pc) else (up if pb <= pc else upleft)
+            else:
+                fail(f"corrupt PNG: unknown filter type {ftype} on row {y}")
+            out[cur + i] = (line[i] + add) & 0xFF
+    return out
+
+
+def write_png(path, width, height, rgb):
+    rows = b"".join(b"\x00" + bytes(rgb[y * width * 3:(y + 1) * width * 3]) for y in range(height))
+
+    def chunk(kind, body):
+        crc = zlib.crc32(kind + body) & 0xFFFFFFFF
+        return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", crc)
+
+    png = (b"\x89PNG\r\n\x1a\n"
+           + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+           + chunk(b"IDAT", zlib.compress(rows, 9))
+           + chunk(b"IEND", b""))
+    open(path, "wb").write(png)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("input", help="source PNG with dark artwork on a white background")
+    parser.add_argument("output", help="where to write the recolored opaque PNG")
+    parser.add_argument("--color", required=True, help="background color as hex, e.g. F6E3A1")
+    args = parser.parse_args()
+
+    try:
+        bg = tuple(int(args.color.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        fail(f"--color must be 6 hex digits like F6E3A1, got {args.color!r}")
+    if len(args.color.lstrip("#")) != 6:
+        fail(f"--color must be 6 hex digits like F6E3A1, got {args.color!r}")
+
+    width, height, ch, px = read_png(args.input)
+    count = width * height
+
+    def pixel_rgb(i):
+        return px[i * ch], px[i * ch + 1], px[i * ch + 2]
+
+    def lightness(i):
+        r, g, b = pixel_rgb(i)
+        return (r + g + b) / 3
+
+    light = [lightness(i) for i in range(count)]
+    darkest = min(range(count), key=light.__getitem__)
+    dark_l = light[darkest]
+    dark_rgb = pixel_rgb(darkest)
+    if light[0] <= OUTSIDE_THRESHOLD:
+        fail("the top-left pixel is dark; expected a light background in the corner")
+
+    # Flood fill the background from the corner.
+    outside = bytearray(count)
+    outside[0] = 1
+    queue = deque([0])
+    while queue:
+        i = queue.popleft()
+        x, y = i % width, i // width
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < width and 0 <= ny < height:
+                n = ny * width + nx
+                if not outside[n] and light[n] > OUTSIDE_THRESHOLD:
+                    outside[n] = 1
+                    queue.append(n)
+
+    # Grow the region so antialiased edge pixels get blended too.
+    grown = bytearray(outside)
+    for _ in range(EDGE_GROW_PIXELS):
+        nxt = bytearray(grown)
+        for i in range(count):
+            if grown[i]:
+                x, y = i % width, i // width
+                for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if 0 <= nx < width and 0 <= ny < height:
+                        nxt[ny * width + nx] = 1
+        grown = nxt
+
+    out = bytearray(count * 3)
+    for i in range(count):
+        if grown[i]:
+            coverage = min(1.0, max(0.0, (255 - light[i]) / (255 - dark_l)))
+            for c in range(3):
+                out[i * 3 + c] = round(dark_rgb[c] * coverage + bg[c] * (1 - coverage))
+        else:
+            out[i * 3:i * 3 + 3] = bytes(pixel_rgb(i))
+
+    write_png(args.output, width, height, out)
+    print(f"wrote {args.output} ({width}x{height}), background #{args.color.lstrip('#').upper()}, "
+          f"{sum(outside)} background pixels recolored before edge blending")
+
+
+if __name__ == "__main__":
+    main()
