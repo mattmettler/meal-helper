@@ -10,7 +10,7 @@ import { Result } from './Result'
 
 interface BuildProps {
   catalog: Catalog
-  onSave: (meal: Meal) => void
+  onSave: (meal: Meal) => void | Promise<void>
 }
 
 type Phase = 'building' | 'result' | 'too-thin'
@@ -19,6 +19,7 @@ export function Build({ catalog, onSave }: BuildProps) {
   const [stepIndex, setStepIndex] = useState(0)
   const [picks, setPicks] = useState(emptyPicks)
   const [phase, setPhase] = useState<Phase>('building')
+  const [saveFailed, setSaveFailed] = useState(false)
 
   const step = STEPS[stepIndex]
   const options = availableOptions(catalog, step.id, picks)
@@ -29,6 +30,17 @@ export function Build({ catalog, onSave }: BuildProps) {
     setStepIndex(0)
     setPicks(emptyPicks())
     setPhase('building')
+    setSaveFailed(false)
+  }
+
+  async function save(meal: Meal) {
+    try {
+      await onSave(meal)
+    } catch {
+      setSaveFailed(true)
+      return
+    }
+    startOver()
   }
 
   function toggle(optionId: string) {
@@ -48,7 +60,8 @@ export function Build({ catalog, onSave }: BuildProps) {
     return (
       <Result
         meal={buildMeal(catalog, picks)}
-        onSave={meal => { onSave(meal); startOver() }}
+        onSave={save}
+        saveFailed={saveFailed}
         onDiscard={startOver}
       />
     )

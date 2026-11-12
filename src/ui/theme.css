@@ -160,7 +160,7 @@ button { font: inherit; color: inherit; }
   font: inherit;
   font-size: 15px;
   font-weight: 700;
-  background: #fff;
+  background: var(--card);
   color: var(--ink);
   margin-bottom: 12px;
 }

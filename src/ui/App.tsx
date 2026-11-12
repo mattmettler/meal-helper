@@ -15,7 +15,7 @@ export function App() {
     <div className="app">
       <main className="screen">
         <section hidden={tab !== 'build'}>
-          <Build catalog={catalog} onSave={meal => { void saveMeal(db, meal).then(() => setTab('saved')) }} />
+          <Build catalog={catalog} onSave={async meal => { await saveMeal(db, meal); setTab('saved') }} />
         </section>
         <section hidden={tab !== 'saved'}>
           <h1>Saved meals</h1>

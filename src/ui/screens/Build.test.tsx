@@ -21,7 +21,7 @@ const catalog: Catalog = {
   ],
 }
 
-function renderBuild(onSave: (meal: Meal) => void = () => {}) {
+function renderBuild(onSave: (meal: Meal) => void | Promise<void> = () => {}) {
   const user = userEvent.setup()
   render(<Build catalog={catalog} onSave={onSave} />)
   return user
@@ -103,12 +103,10 @@ describe('Build', () => {
     await pick(user, /Back/)
     await pick(user, /Back/)
     await pick(user, 'Pasta')
+    await pick(user, /^Pasta/)
+    await pick(user, /^Rice/)
     await pick(user, 'Next')
-    expect(screen.queryByRole('button', { name: 'Spinach' })).not.toBeInTheDocument()
-    await pick(user, 'Kale')
-    await pick(user, 'Next')
-    await pick(user, /Back/)
-    expect(screen.getByRole('button', { name: 'Kale' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Spinach' })).toHaveAttribute('aria-pressed', 'false')
   })
 
   async function finishWith(user: ReturnType<typeof userEvent.setup>, picks: Array<string | RegExp>) {
@@ -169,5 +167,22 @@ describe('Build', () => {
     expect(onSave).not.toHaveBeenCalled()
     expect(screen.getByText('Step 1 of 6')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Rice/ })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('stays on the result with the typed name when saving fails, then saves on retry', async () => {
+    const onSave = vi.fn().mockRejectedValueOnce(new Error('disk full')).mockResolvedValueOnce(undefined)
+    const user = renderBuild(onSave)
+    await finishWith(user, [/^Rice/, 'Kale'])
+    const field = screen.getByLabelText('Name your meal')
+    await user.clear(field)
+    await user.type(field, 'Friday meal')
+    await pick(user, 'Save this meal')
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't save that one. Try again?")
+    expect(screen.getByLabelText('Name your meal')).toHaveValue('Friday meal')
+    expect(screen.queryByText('Step 1 of 6')).not.toBeInTheDocument()
+    await pick(user, 'Save this meal')
+    expect(await screen.findByText('Step 1 of 6')).toBeInTheDocument()
+    expect(onSave).toHaveBeenCalledTimes(2)
+    expect(onSave.mock.calls[1][0].name).toBe('Friday meal')
   })
 })
