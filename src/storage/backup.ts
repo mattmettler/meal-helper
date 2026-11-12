@@ -95,7 +95,7 @@ export function parseBackup(text: string): ParsedBackup {
   if (!isRecord(parsed) || parsed.app !== BACKUP_APP || !isNumber(parsed.formatVersion) || !isNumber(parsed.exportedAt)) {
     return invalid
   }
-  if (parsed.formatVersion > BACKUP_FORMAT_VERSION) return { ok: false, error: NEWER_VERSION }
+  if ((parsed.formatVersion as number) > BACKUP_FORMAT_VERSION) return { ok: false, error: NEWER_VERSION }
   if (!isRecord(parsed.data)) return invalid
   for (const table of TABLES) {
     const rows = parsed.data[table.name]
