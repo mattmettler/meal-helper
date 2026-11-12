@@ -30,7 +30,7 @@ Non-goals: accounts, backend, sync, AI generation, recipes (no instructions, qua
 | Filtering | Exclusion rules only. Everything is available unless a rule hides it. |
 | Tips | Each tip attaches to exactly one option. No combination tips. Built-in tips and notes are fixed. Users can add tips to any option and delete their own. |
 | Meal content | Name, picks grouped by step, tips inline under each pick. No "ingredients" or "instructions" fields. |
-| Deletion | Any option can be soft-deleted and restored. Saved meals can be hard-deleted behind a confirm. |
+| Deletion | Built-in options can be hidden and restored. Custom options are deleted permanently, with their clashes and tips, behind a confirm. Saved meals can be hard-deleted behind a confirm. |
 | Saved meal sort | Favorites first, then newest first. No other sort options. |
 
 ## 3. The meal-building flow
@@ -65,7 +65,7 @@ Coverage of the original conditions: no picks fails both; picks in one step fail
 
 `availableOptions(step, picks)` returns the options for a step, excluding:
 
-- options the user soft-deleted,
+- built-in options the user hid,
 - options that have a compatibility pair with any option already picked (in earlier steps, or earlier in the same multi-select step).
 
 A pair is symmetric: it stores two option ids and applies in whichever order the options are encountered. If filtering leaves a step with no options, the step shows "Nothing fits with your picks, skip ahead" and Next still works.
@@ -104,15 +104,15 @@ Three layers.
 
 | Table | Fields |
 | :--- | :--- |
-| customOptions | id (UUID), stepId, name, note (optional), deleted |
-| hiddenBuiltIns | optionId (built-in options the user deleted) |
+| customOptions | id (UUID), stepId, name, note (optional) |
+| hiddenBuiltIns | optionId (built-in options the user hid) |
 | userPairs | id, optionIdA, optionIdB |
 | userTips | id (auto-increment), optionId, text |
 | savedMeals | id, name, groups (step name, option names, tip texts as plain text), isFavorite, createdAt |
 
 Every option, built-in or custom, has an optional `note`: a few words shown on the option's card in the build step to add context (for example Sesame Seeds: "adds texture and good fats"). The field exists on all options to keep the schema uniform. The built-in content will fill it mainly for Sauces and Garnish/Texture. Notes are limited to about 40 characters so they fit on two lines, appear only on the step screen (not on the result screen or in saved meals, where tips do that job), and are fixed on built-in options. The user can edit the note on their own custom options.
 
-Saved meals store plain text so deleting or changing options never changes them. Deleting an option leaves its pairs and tips in place, so restoring it brings them back.
+Saved meals store plain text so deleting or changing options never changes them. Hiding a built-in option leaves its pairs and tips in place, so restoring it brings them back. Deleting a custom option also deletes the clashes and tips attached to it.
 
 ### 4.2 Custom option compatibility
 
@@ -125,7 +125,7 @@ Bottom tab bar: Build, Saved, Options.
 - **Build**: one step at a time, progress indicator ("Step 3 of 6"), tappable option cards in a two-column grid (bold name, with the option's optional note in smaller text underneath), Back keeps picks, Next doubles as Skip when nothing is picked. After step 6, validate. Failure shows the message and resets. Success goes to Result. Build state is in memory only.
 - **Result**: name, picks grouped by step with tips inline under each option, editable name field (pre-filled), Save, Discard.
 - **Saved**: list ordered favorites first then newest. Heart toggle per row. Tapping a row opens a read-only view of the snapshot with a Delete button behind a confirm.
-- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add a tip to any option and delete tips you added, edit the note and clashes on your own options, delete (hide) any option, "Hidden options" list to restore, Export, Import, and a "last backed up N days ago" note. At the very bottom, below the backup tile, small centered credit text in two lines separated by a little space: "Icon image from vecteezy.com" and "Made by Matt for kestrel <3".
+- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add a tip to any option and delete tips you added, edit the note and clashes on your own options, hide any built-in option (restore it from the "Hidden options" list) or delete your own custom options (after a confirm), Export, Import, and a "last backed up N days ago" note. At the very bottom, below the backup tile, small centered credit text in two lines separated by a little space: "Icon image from vecteezy.com" and "Made by Matt for kestrel <3".
 
 ### 5.1 Visual design
 

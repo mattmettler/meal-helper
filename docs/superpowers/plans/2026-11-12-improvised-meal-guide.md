@@ -30,7 +30,7 @@
 Failure modes the spec implies that its own tests would not catch, most likely first. Each has a test in the task named in brackets.
 
 1. A user adds a custom option with a blank name or a note over 40 characters. They expect a gentle message and nothing saved. [Task 5, Task 13]
-2. Picks that no longer make sense: the user goes Back and changes an earlier pick so a later pick now clashes, or an option vanishes (hidden, or replaced by an import). They expect the stale picks dropped, never a crash or a meal naming a missing option. [Task 3, Task 4]
+2. Picks that no longer make sense: the user goes Back and changes an earlier pick so a later pick now clashes, or an option vanishes (hidden, deleted, or replaced by an import). They expect the stale picks dropped, never a crash or a meal naming a missing option. [Task 3, Task 4]
 3. A truncated, non-JSON, wrong-version, or duplicate-id backup file. They expect an error message and their existing data untouched. [Task 8, Task 15]
 4. A browser without `navigator.storage.persist`. They expect the app to keep working. [Task 8]
 5. A backup timestamp in the future (clock change) or no backup ever. They expect no nagging banner in the first case and a gentle one only after a meal is saved in the second. [Task 6]
@@ -83,7 +83,7 @@ export interface Seed {
   pairs: Pair[]
   tips: Array<{ id: string; optionId: string; text: string }>   // built-in tips keep their array order
 }
-export interface CustomOptionRow { id: string; stepId: StepId; name: string; note?: string; deleted: boolean }
+export interface CustomOptionRow { id: string; stepId: StepId; name: string; note?: string }
 export interface UserPairRow { id: string; optionIdA: string; optionIdB: string }
 export interface UserTipRow { id: number; optionId: string; text: string }   // id auto-increments, so rows come back in the order added
 export interface UserData {
@@ -138,11 +138,11 @@ export interface UserData {
 **Interfaces:**
 - Consumes: `Seed`, `UserData`, `Catalog`, `Option`, `Picks`, `StepId`, `STEPS`.
 - Produces:
-  - `buildCatalog(seed: Seed, user: UserData): Catalog` — built-in options (`isCustom: false`) followed by custom options (`isCustom: true`) in input order. `hidden` is true for ids in `hiddenBuiltIns` and for custom rows with `deleted: true`. Pairs and tips from both sources are combined: seed tips in seed order, then user tips in row order (user tips get `isCustom: true` and `id: String(row.id)`).
+  - `buildCatalog(seed: Seed, user: UserData): Catalog` — built-in options (`isCustom: false`) followed by custom options (`isCustom: true`) in input order. `hidden` is true only for built-in options whose id is in `hiddenBuiltIns` (custom options are never hidden). Pairs and tips from both sources are combined: seed tips in seed order, then user tips in row order (user tips get `isCustom: true` and `id: String(row.id)`).
   - `availableOptions(catalog: Catalog, stepId: StepId, picks: Picks): Option[]` — options of that step that are not hidden and have no pair with any option picked in an earlier step or earlier in the same step. Picks in later steps are ignored. Options already picked in this step stay available.
   - `prunePicks(catalog: Catalog, picks: Picks): Picks` — walks steps in order and keeps a pick only if its option exists, is not hidden, and is still available given the picks already kept.
 
-- [ ] **Step 1: Write failing tests in `catalog.test.ts`:** seed and custom options merge with correct `isCustom`; a built-in id in `hiddenBuiltIns` is `hidden`; a custom row with `deleted: true` is `hidden`; seed pairs and user pairs both appear as `Pair`s; seed and user tips both appear with `isCustom` false/true.
+- [ ] **Step 1: Write failing tests in `catalog.test.ts`:** seed and custom options merge with correct `isCustom`; a built-in id in `hiddenBuiltIns` is `hidden`; a custom option is never `hidden`; seed pairs and user pairs both appear as `Pair`s; seed and user tips both appear with `isCustom` false/true.
 - [ ] **Step 2: Write failing tests in `filtering.test.ts`:** hidden options are excluded; a pair excludes the later option in either direction (`a`/`b` swapped); a pair with an option in the same multi step excludes the later one; a pair with a non-picked option changes nothing; picks in later steps are ignored; a step whose options are all excluded returns `[]`; an already-picked option stays available. `prunePicks`: drops a later pick that clashes after an earlier pick changes (Back-then-change case); drops an id missing from the catalog; drops a hidden option; keeps compatible picks in order.
 - [ ] **Step 3: Run both files.** Expected: FAIL.
 - [ ] **Step 4: Implement the three functions** with the signatures above.
@@ -229,14 +229,15 @@ export interface UserData {
   - `class MealGuideDb extends Dexie` with tables `customOptions` (`'id, stepId'`), `hiddenBuiltIns` (`'optionId'`), `userPairs` (`'id, optionIdA, optionIdB'`), `userTips` (`'++id, optionId'`), `savedMeals` (`'id, createdAt'`), `settings` (`'key'`, rows `{ key: string; value: unknown }`).
   - `createDb(name?: string): MealGuideDb` (default name `'meal-guide'`); `instance.ts` exports `db = createDb()`.
   - `loadUserData(db): Promise<UserData>`
-  - `addCustomOption(db, input: { stepId: StepId; name: string; note?: string }): Promise<string>` — trims, stores `deleted: false`, returns a UUID.
+  - `addCustomOption(db, input: { stepId: StepId; name: string; note?: string }): Promise<string>` — trims and returns the new UUID.
   - `updateCustomOptionNote(db, optionId: string, note?: string): Promise<void>`
-  - `setOptionHidden(db, option: Option, hidden: boolean): Promise<void>` — custom: toggles `deleted`; built-in: adds or removes the `hiddenBuiltIns` row.
+  - `hideBuiltInOption(db, optionId: string): Promise<void>` and `restoreBuiltInOption(db, optionId: string): Promise<void>` — add or remove the `hiddenBuiltIns` row.
+  - `deleteCustomOption(db, optionId: string): Promise<void>` — in one transaction, removes the `customOptions` row, every `userPairs` row involving it (on either side), and every `userTips` row for it.
   - `setClashes(db, optionId: string, otherIds: string[]): Promise<void>` — replaces every `userPairs` row involving `optionId` with one row per distinct id in `otherIds` (ignoring `optionId` itself).
   - `addUserTip(db, optionId: string, text: string): Promise<void>` — trims and appends (the table's auto-increment key keeps insertion order).
   - `deleteUserTip(db, tipId: string): Promise<void>` (`tipId` is `String(row.id)`; convert back to a number for the table key)
 
-- [ ] **Step 1: Write failing tests** (each opens `createDb(uniqueName)`, and persistence tests close and reopen the same name): added custom option persists across reopen; `updateCustomOptionNote` persists and clears with `undefined`; hiding a built-in persists and unhiding removes the row; hiding then restoring a custom option toggles `deleted`; `setClashes` replaces earlier pairs involving the option, keeps pairs not involving it, dedupes, and ignores the option's own id; tips come back in the order added and `deleteUserTip` removes only that tip; hiding an option leaves its pairs and tips in place.
+- [ ] **Step 1: Write failing tests** (each opens `createDb(uniqueName)`, and persistence tests close and reopen the same name): added custom option persists across reopen; `updateCustomOptionNote` persists and clears with `undefined`; hiding a built-in persists and restoring it removes the row; `deleteCustomOption` removes the option, its clashes (whichever side it is on), and its tips, and leaves other options, pairs, and tips alone; `setClashes` replaces earlier pairs involving the option, keeps pairs not involving it, dedupes, and ignores the option's own id; tips come back in the order added and `deleteUserTip` removes only that tip; hiding a built-in option leaves its pairs and tips in place.
 - [ ] **Step 2: Run `npx vitest run src/storage/userData.test.ts`.** Expected: FAIL.
 - [ ] **Step 3: Implement** `db.ts`, `userData.ts`, `instance.ts`.
 - [ ] **Step 4: Run the test.** Expected: PASS.
@@ -261,7 +262,7 @@ export interface UserData {
   - `exportBackup(db, now = Date.now()): Promise<BackupFile>` (never includes `settings` or built-in content); `serializeBackup(file: BackupFile): string`; `parseBackup(text: string): { ok: true; file: BackupFile } | { ok: false; error: string }`; `summarizeBackup(file: BackupFile): { customOptions: number; tips: number; clashes: number; hiddenOptions: number; savedMeals: number }`; `importBackup(db, file: BackupFile): Promise<void>` (one transaction that clears the five tables then inserts).
 
 - [ ] **Step 1: Write failing tests.**
-  - Saved meals: saving stores the snapshot text; hiding a custom option or deleting a user tip afterwards leaves the saved meal unchanged; list order is favorites first then newest (two favorites and two non-favorites with explicit `now`); favorite persists across close/reopen; delete removes only that meal.
+  - Saved meals: saving stores the snapshot text; deleting a custom option or a user tip afterwards leaves the saved meal unchanged; list order is favorites first then newest (two favorites and two non-favorites with explicit `now`); favorite persists across close/reopen; delete removes only that meal.
   - Settings: `getLastBackupAt` is `null` initially and returns the time recorded by `recordBackupExport`. Persistence: `requestPersistence` resolves `true` or `false` as a plain stub object with a `persist()` method answers, and resolves `false` (without throwing) for `undefined` and for `{}`.
   - Backup: export then import into a fresh db round-trips every table (user tips keep their ids and order); export has no `settings` content; import replaces data (rows only in the old db are gone); `parseBackup` returns `ok: false` with the message `That doesn't look like a backup from this app` for invalid JSON, truncated JSON, `null`, an array, the wrong `app`, a missing table, a non-array table, and a row with a wrong field type (`savedMeals[0].groups` not an array); for `formatVersion: 2` it returns `ok: false` with `This backup is from a newer version of the app`; duplicate ids within one table return `ok: false`; `importBackup` of a file with duplicate ids (bypassing `parseBackup`) rejects and leaves the existing data intact; `summarizeBackup` counts match.
 - [ ] **Step 2: Run the three files.** Expected: FAIL.
@@ -378,7 +379,7 @@ export interface UserData {
 **Interfaces:**
 - Consumes: `Catalog`, `validateOptionInput`, `NOTE_MAX_LENGTH`, `addCustomOption`, `setClashes`.
 - Produces:
-  - `<Options catalog onOpenOption={(id) => void} onAdd onOpenHidden onOpenBackup reminder: ReminderState />` — options grouped by step, add link per step, `Hidden options (N)` link, a backup entry showing `Last backed up N days ago` (or `Never backed up`) with the `BackupReminder` banner above it, and the credit text.
+  - `<Options catalog onOpenOption={(id) => void} onAdd onOpenHidden onOpenBackup reminder: ReminderState />` — options grouped by step, add link per step, `Hidden options (N)` link (built-in options only), a backup entry showing `Last backed up N days ago` (or `Never backed up`) with the `BackupReminder` banner above it, and the credit text.
   - `<OptionAdd onNext={(input: { stepId: StepId; name: string; note?: string }) => void} onBack />`
   - `<Compatibility catalog optionName stepId initialChecked={string[]} excludeOptionId? onSave={(checkedIds: string[]) => void} onBack />` — every other option grouped by step with checkboxes.
 
@@ -398,12 +399,12 @@ export interface UserData {
 - Test: `src/ui/screens/OptionDetail.test.tsx`, `src/ui/screens/HiddenOptions.test.tsx`
 
 **Interfaces:**
-- Consumes: `Catalog`, `Option`, `validateOptionInput` (called as `validateOptionInput({ name: option.name, note })` when saving a note), `validateTipText`, `updateCustomOptionNote`, `setClashes`, `addUserTip`, `deleteUserTip`, `setOptionHidden`.
+- Consumes: `Catalog`, `Option`, `validateOptionInput` (called as `validateOptionInput({ name: option.name, note })` when saving a note), `validateTipText`, `updateCustomOptionNote`, `setClashes`, `addUserTip`, `deleteUserTip`, `hideBuiltInOption`, `restoreBuiltInOption`, `deleteCustomOption`.
 - Produces:
-  - `<OptionDetail catalog optionId onSaveNote={(note?: string) => void} onEditClashes onAddTip={(text: string) => void} onDeleteTip={(tipId: string) => void} onHide onBack />`
-  - `<HiddenOptions catalog onRestore={(optionId: string) => void} onBack />`
+  - `<OptionDetail catalog optionId onSaveNote={(note?: string) => void} onEditClashes onAddTip={(text: string) => void} onDeleteTip={(tipId: string) => void} onHide onDelete onBack />` (`onHide` is used by built-in options, `onDelete` by custom options)
+  - `<HiddenOptions catalog onRestore={(optionId: string) => void} onBack />` (lists hidden built-in options)
 
-- [ ] **Step 1: Write failing tests.** Custom option: note is editable and shows the counter; an over-length note shows the message and does not call `onSaveNote`; `Doesn't go with` lists current clashes with an Edit control calling `onEditClashes`; user tips show a delete control calling `onDeleteTip`. Built-in option: the note is plain text with no input, built-in tips are locked (no delete control), user tips are deletable, and there is no clash editor. Both: blank tip shows `Write a tip first` and does not call `onAddTip`; a valid tip calls `onAddTip` with trimmed text; `Hide this option` calls `onHide`. `HiddenOptions`: lists hidden options with their step name; `Restore` calls `onRestore(id)`; empty list shows a friendly empty message.
+- [ ] **Step 1: Write failing tests.** Custom option: note is editable and shows the counter; an over-length note shows the message and does not call `onSaveNote`; `Doesn't go with` lists current clashes with an Edit control calling `onEditClashes`; user tips show a delete control calling `onDeleteTip`; `Delete this option` asks for confirmation (cancel does nothing) and confirming calls `onDelete`, and there is no hide control. Built-in option: the note is plain text with no input, built-in tips are locked (no delete control), user tips are deletable, and there is no clash editor. Both: blank tip shows `Write a tip first` and does not call `onAddTip`; a valid tip calls `onAddTip` with trimmed text; on a built-in option `Hide this option` calls `onHide` and there is no delete control. `HiddenOptions`: lists hidden options with their step name; `Restore` calls `onRestore(id)`; empty list shows a friendly empty message.
 - [ ] **Step 2: Run the two files.** Expected: FAIL.
 - [ ] **Step 3: Implement** both screens per mockup-v2, and wire all callbacks in `App` to the storage functions.
 - [ ] **Step 4: Run the two files.** Expected: PASS.
