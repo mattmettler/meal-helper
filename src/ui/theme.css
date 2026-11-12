@@ -177,3 +177,30 @@ label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display
 .heart { min-width: 44px; min-height: 44px; border: 0; background: transparent; font-size: 22px; cursor: pointer; }
 .heart.off { opacity: .35; }
 .reminder { background: var(--starch); border-radius: var(--radius); padding: 12px 16px; font-size: 14px; font-weight: 700; margin: 0 0 14px; }
+
+.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display: block; margin: 8px 0 4px; }
+.error { color: var(--protein-d); font-size: 13px; font-weight: 700; margin: 0 0 12px; }
+
+.optgroup { margin-bottom: 14px; }
+.mini { display: inline-block; font-size: 13px; font-weight: 600; padding: 7px 12px; min-height: 44px; border: 0; border-radius: 99px; background: var(--c); margin: 0 6px 6px 0; cursor: pointer; }
+.mini.custom { border: 2px dashed var(--cd); background: var(--card); }
+.badge { font-size: 11px; font-weight: 800; color: var(--ink-soft); }
+.addrow { min-height: 44px; border: 0; background: transparent; padding: 0; font-size: 13px; font-weight: 800; color: var(--ink-soft); cursor: pointer; }
+.linkrow { display: flex; align-items: center; width: 100%; min-height: 44px; border: 0; background: transparent; padding: 0 2px; margin: 8px 0 14px; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
+.linkrow .go { margin-left: auto; color: var(--ink-soft); }
+.backup { display: block; width: 100%; background: #F3EEFA; border: 0; border-radius: var(--radius); padding: 14px 16px; text-align: left; font-size: 13px; cursor: pointer; }
+.backup b, .backup span { display: block; }
+.legal { margin-top: 18px; text-align: center; font-size: 12px; color: var(--ink-soft); }
+.legal p { margin: 0 0 4px; }
+
+.counter { text-align: right; font-size: 12px; color: var(--ink-soft); margin: 0 4px 12px; }
+.steppicker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.pill { min-height: 44px; border-radius: 99px; padding: 8px 12px; font-size: 13px; font-weight: 700; background: var(--c); border: 2px solid transparent; opacity: .6; cursor: pointer; }
+.pill[aria-pressed="true"] { opacity: 1; border-color: var(--cd); }
+.pill[aria-pressed="true"]::before { content: "\2713 "; }
+
+.checkrow { position: relative; display: flex; align-items: center; gap: 12px; padding: 6px 4px; font-weight: 600; font-size: 15px; min-height: 44px; cursor: pointer; }
+.checkrow input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.box { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--line); background: var(--card); display: flex; align-items: center; justify-content: center; font-size: 16px; flex: none; }
+.checkrow.on .box { background: var(--c); border-color: var(--cd); }
+.checkrow.on .box::after { content: "\2713"; }

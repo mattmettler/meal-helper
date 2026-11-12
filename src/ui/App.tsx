@@ -4,16 +4,27 @@ import { backupReminder } from '../logic/backupReminder'
 import { db } from '../storage/instance'
 import { deleteSavedMeal, listSavedMeals, saveMeal, setFavorite } from '../storage/savedMeals'
 import { getLastBackupAt } from '../storage/settings'
+import { addCustomOption, setClashes } from '../storage/userData'
 import { Build } from './screens/Build'
 import type { ReminderState } from './screens/BackupReminder'
+import { Compatibility } from './screens/Compatibility'
+import { OptionAdd } from './screens/OptionAdd'
+import { Options } from './screens/Options'
 import { Saved } from './screens/Saved'
 import { SavedDetail } from './screens/SavedDetail'
 import { TabBar, type Tab } from './TabBar'
+import type { StepId } from '../logic/types'
 import { useCatalog } from './useCatalog'
+
+type OptionsView =
+  | { screen: 'home' }
+  | { screen: 'add'; stepId: StepId }
+  | { screen: 'compatibility'; input: { stepId: StepId; name: string; note?: string } }
 
 export function App() {
   const [tab, setTab] = useState<Tab>('build')
   const [openMealId, setOpenMealId] = useState<string | null>(null)
+  const [optionsView, setOptionsView] = useState<OptionsView>({ screen: 'home' })
   const catalog = useCatalog()
   const meals = useLiveQuery(() => listSavedMeals(db), [])
   const reminder = useLiveQuery(async (): Promise<ReminderState> => {
@@ -49,7 +60,37 @@ export function App() {
           )}
         </section>
         <section hidden={tab !== 'options'}>
-          <h1>Your options</h1>
+          {optionsView.screen === 'add' && (
+            <OptionAdd
+              initialStepId={optionsView.stepId}
+              onNext={input => setOptionsView({ screen: 'compatibility', input })}
+              onBack={() => setOptionsView({ screen: 'home' })}
+            />
+          )}
+          {optionsView.screen === 'compatibility' && (
+            <Compatibility
+              catalog={catalog}
+              optionName={optionsView.input.name}
+              stepId={optionsView.input.stepId}
+              initialChecked={[]}
+              onSave={async checkedIds => {
+                const newId = await addCustomOption(db, optionsView.input)
+                await setClashes(db, newId, checkedIds)
+                setOptionsView({ screen: 'home' })
+              }}
+              onBack={() => setOptionsView({ screen: 'add', stepId: optionsView.input.stepId })}
+            />
+          )}
+          {optionsView.screen === 'home' && (
+            <Options
+              catalog={catalog}
+              onOpenOption={() => {}}
+              onAdd={stepId => setOptionsView({ screen: 'add', stepId })}
+              onOpenHidden={() => {}}
+              onOpenBackup={() => {}}
+              reminder={reminder}
+            />
+          )}
         </section>
       </main>
       <TabBar tab={tab} onChange={setTab} />
