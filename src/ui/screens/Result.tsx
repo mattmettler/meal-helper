@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { STEPS } from '../../logic/steps'
 import type { Meal } from '../../logic/types'
-import { stepClass } from '../stepTheme'
+import { MealGroups } from './MealGroups'
 
 interface ResultProps {
   meal: Meal
@@ -16,20 +15,7 @@ export function Result({ meal, onSave, saveFailed, onDiscard }: ResultProps) {
   return (
     <>
       <h1>Your meal</h1>
-      {meal.groups.map(group => {
-        const step = STEPS.find(s => s.name === group.stepName)
-        return (
-          <div key={group.stepName} className={`card ${step ? stepClass(step.id) : ''}`}>
-            <span className="group-label">{group.stepName}</span>
-            {group.items.map(item => (
-              <div key={item.optionName}>
-                <div className="pick">{item.optionName}</div>
-                {item.tips.map(tip => <p key={tip} className="tip">{tip}</p>)}
-              </div>
-            ))}
-          </div>
-        )
-      })}
+      <MealGroups groups={meal.groups} />
       <label className="small" htmlFor="meal-name">Name your meal</label>
       <input id="meal-name" className="field" value={name} onChange={e => setName(e.target.value)} />
       {saveFailed && <p role="alert" className="nothing-fits">Couldn't save that one. Try again?</p>}

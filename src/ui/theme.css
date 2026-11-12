@@ -168,3 +168,12 @@ label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display
 
 .center { text-align: center; padding-top: 60px; }
 .center h2 { font-size: 20px; margin: 22px 8px 24px; line-height: 1.35; }
+
+.sect { font-size: 12px; font-weight: 800; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; margin: 14px 2px 8px; }
+.row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius); padding: 6px 8px 6px 16px; box-shadow: var(--shadow); margin-bottom: 10px; }
+.row-open { flex: 1; display: block; min-height: 44px; border: 0; background: transparent; text-align: left; padding: 6px 0; cursor: pointer; }
+.row .name { display: block; font-weight: 800; font-size: 15px; }
+.row .when { display: block; font-size: 12px; color: var(--ink-soft); }
+.heart { min-width: 44px; min-height: 44px; border: 0; background: transparent; font-size: 22px; cursor: pointer; }
+.heart.off { opacity: .35; }
+.reminder { background: var(--starch); border-radius: var(--radius); padding: 12px 16px; font-size: 14px; font-weight: 700; margin: 0 0 14px; }
