@@ -1,6 +1,6 @@
 import { createDb } from './db'
 import {
-  addCustomOption, addUserTip, deleteCustomOption, deleteUserTip, hideBuiltInOption,
+  addCustomOption, addCustomOptionWithClashes, addUserTip, deleteCustomOption, deleteUserTip, hideBuiltInOption,
   loadUserData, restoreBuiltInOption, setClashes, updateCustomOptionNote,
 } from './userData'
 
@@ -124,5 +124,33 @@ describe('user tips', () => {
     await deleteUserTip(reopened, String(data.userTips[1].id))
     expect((await loadUserData(reopened)).userTips.map((t) => t.text)).toEqual(['first', 'third'])
     reopened.close()
+  })
+})
+
+describe('adding an option with its clashes', () => {
+  it('saves the option and its clashes together', async () => {
+    const db = createDb(freshName())
+    const id = await addCustomOptionWithClashes(db, { stepId: 'sauces', name: 'Chili crisp' }, ['a', 'b'])
+    const data = await loadUserData(db)
+    expect(data.customOptions.map((o) => o.id)).toEqual([id])
+    expect(data.userPairs.map((p) => p.optionIdB).sort()).toEqual(['a', 'b'])
+    db.close()
+  })
+
+  it('leaves no option behind when saving the clashes fails', async () => {
+    const db = createDb(freshName())
+    // Repeated ids make the second clash row collide, so the clash write fails.
+    const spy = vi.spyOn(crypto, 'randomUUID').mockReturnValue('00000000-0000-4000-8000-000000000000')
+    try {
+      await expect(
+        addCustomOptionWithClashes(db, { stepId: 'sauces', name: 'Chili crisp' }, ['a', 'b']),
+      ).rejects.toThrow()
+    } finally {
+      spy.mockRestore()
+    }
+    const data = await loadUserData(db)
+    expect(data.customOptions).toEqual([])
+    expect(data.userPairs).toEqual([])
+    db.close()
   })
 })

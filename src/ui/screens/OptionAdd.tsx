@@ -6,14 +6,16 @@ import { stepClass } from '../stepTheme'
 
 interface OptionAddProps {
   initialStepId?: StepId
+  initialName?: string
+  initialNote?: string
   onNext: (input: { stepId: StepId; name: string; note?: string }) => void
   onBack: () => void
 }
 
-export function OptionAdd({ initialStepId = 'starch', onNext, onBack }: OptionAddProps) {
+export function OptionAdd({ initialStepId = 'starch', initialName = '', initialNote = '', onNext, onBack }: OptionAddProps) {
   const [stepId, setStepId] = useState<StepId>(initialStepId)
-  const [name, setName] = useState('')
-  const [note, setNote] = useState('')
+  const [name, setName] = useState(initialName)
+  const [note, setNote] = useState(initialNote)
   const [error, setError] = useState<string | null>(null)
 
   function next() {
@@ -57,7 +59,7 @@ export function OptionAdd({ initialStepId = 'starch', onNext, onBack }: OptionAd
       <div>
         <div className="label small">How it will look</div>
         <div className="chips grid">
-          <div className="chip" aria-pressed="true">
+          <div className="chip selected">
             <b>{name.trim() || 'Your option'}</b>
             {note.trim() && <small>{note.trim()}</small>}
           </div>

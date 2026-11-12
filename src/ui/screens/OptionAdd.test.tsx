@@ -1,19 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { Catalog } from '../../logic/types'
-import { Compatibility } from './Compatibility'
 import { OptionAdd } from './OptionAdd'
-
-const catalog: Catalog = {
-  options: [
-    { id: 'rice', stepId: 'starch', name: 'Brown rice', isCustom: false, hidden: false },
-    { id: 'kale', stepId: 'greens', name: 'Kale', isCustom: false, hidden: false },
-    { id: 'old', stepId: 'greens', name: 'Old Greens', isCustom: false, hidden: true },
-    { id: 'farro', stepId: 'starch', name: 'Farro', isCustom: true, hidden: false },
-  ],
-  pairs: [],
-  tips: [],
-}
 
 describe('OptionAdd', () => {
   it('asks for a name when it is blank', async () => {
@@ -62,42 +49,23 @@ describe('OptionAdd', () => {
     render(<OptionAdd initialStepId="sauces" onNext={() => {}} onBack={() => {}} />)
     expect(screen.getByRole('button', { name: 'Sauces' })).toHaveAttribute('aria-pressed', 'true')
   })
-})
 
-describe('Compatibility', () => {
-  function renderIt() {
-    const onSave = vi.fn()
-    render(
-      <Compatibility
-        catalog={catalog}
-        optionName="Quinoa"
-        stepId="starch"
-        initialChecked={['kale']}
-        excludeOptionId="farro"
-        onSave={onSave}
-        onBack={() => {}}
-      />,
-    )
-    return onSave
-  }
-
-  it('reflects the initial checks', () => {
-    renderIt()
-    expect(screen.getByRole('checkbox', { name: 'Kale' })).toBeChecked()
-    expect(screen.getByRole('checkbox', { name: 'Brown rice' })).not.toBeChecked()
-    expect(screen.getByRole('button', { name: 'Save option (1 checked)' })).toBeInTheDocument()
+  it('trims the note and drops a whitespace-only one', async () => {
+    const onNext = vi.fn()
+    render(<OptionAdd onNext={onNext} onBack={() => {}} />)
+    await userEvent.type(screen.getByLabelText('Name'), 'Farro')
+    await userEvent.type(screen.getByLabelText('Short note (optional)'), '  nutty  ')
+    await userEvent.click(screen.getByRole('button', { name: /Next/ }))
+    expect(onNext).toHaveBeenLastCalledWith({ stepId: 'starch', name: 'Farro', note: 'nutty' })
+    await userEvent.clear(screen.getByLabelText('Short note (optional)'))
+    await userEvent.type(screen.getByLabelText('Short note (optional)'), '   ')
+    await userEvent.click(screen.getByRole('button', { name: /Next/ }))
+    expect(onNext).toHaveBeenLastCalledWith({ stepId: 'starch', name: 'Farro', note: undefined })
   })
 
-  it('updates the count and saves the checked ids', async () => {
-    const onSave = renderIt()
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Brown rice' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Save option (2 checked)' }))
-    expect(onSave).toHaveBeenCalledWith(['kale', 'rice'])
-  })
-
-  it('leaves out the option being edited and hidden options', () => {
-    renderIt()
-    expect(screen.queryByRole('checkbox', { name: 'Farro' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('checkbox', { name: 'Old Greens' })).not.toBeInTheDocument()
+  it('keeps the name and note it is given back', () => {
+    render(<OptionAdd initialName="Farro" initialNote="nutty" onNext={() => {}} onBack={() => {}} />)
+    expect(screen.getByLabelText('Name')).toHaveValue('Farro')
+    expect(screen.getByLabelText('Short note (optional)')).toHaveValue('nutty')
   })
 })

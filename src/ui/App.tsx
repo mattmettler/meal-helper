@@ -4,7 +4,7 @@ import { backupReminder } from '../logic/backupReminder'
 import { db } from '../storage/instance'
 import { deleteSavedMeal, listSavedMeals, saveMeal, setFavorite } from '../storage/savedMeals'
 import { getLastBackupAt } from '../storage/settings'
-import { addCustomOption, setClashes } from '../storage/userData'
+import { addCustomOptionWithClashes } from '../storage/userData'
 import { Build } from './screens/Build'
 import type { ReminderState } from './screens/BackupReminder'
 import { Compatibility } from './screens/Compatibility'
@@ -18,7 +18,7 @@ import { useCatalog } from './useCatalog'
 
 type OptionsView =
   | { screen: 'home' }
-  | { screen: 'add'; stepId: StepId }
+  | { screen: 'add'; stepId: StepId; name?: string; note?: string }
   | { screen: 'compatibility'; input: { stepId: StepId; name: string; note?: string } }
 
 export function App() {
@@ -63,6 +63,8 @@ export function App() {
           {optionsView.screen === 'add' && (
             <OptionAdd
               initialStepId={optionsView.stepId}
+              initialName={optionsView.name}
+              initialNote={optionsView.note}
               onNext={input => setOptionsView({ screen: 'compatibility', input })}
               onBack={() => setOptionsView({ screen: 'home' })}
             />
@@ -74,11 +76,10 @@ export function App() {
               stepId={optionsView.input.stepId}
               initialChecked={[]}
               onSave={async checkedIds => {
-                const newId = await addCustomOption(db, optionsView.input)
-                await setClashes(db, newId, checkedIds)
+                await addCustomOptionWithClashes(db, optionsView.input, checkedIds)
                 setOptionsView({ screen: 'home' })
               }}
-              onBack={() => setOptionsView({ screen: 'add', stepId: optionsView.input.stepId })}
+              onBack={() => setOptionsView({ screen: 'add', ...optionsView.input })}
             />
           )}
           {optionsView.screen === 'home' && (

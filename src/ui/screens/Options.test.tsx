@@ -37,6 +37,9 @@ describe('Options', () => {
     const starch = screen.getByText('Starch/Base').closest('.optgroup') as HTMLElement
     expect(within(starch).getByText('Brown rice')).toBeInTheDocument()
     expect(within(starch).queryByText('Kale')).not.toBeInTheDocument()
+    const greens = screen.getByText('Greens').closest('.optgroup') as HTMLElement
+    expect(within(greens).getByText('Kale')).toBeInTheDocument()
+    expect(within(greens).queryByText('Brown rice')).not.toBeInTheDocument()
     expect(screen.queryByText('Old Greens')).not.toBeInTheDocument()
   })
 

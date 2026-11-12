@@ -9,12 +9,25 @@ interface CompatibilityProps {
   stepId: StepId
   initialChecked: string[]
   excludeOptionId?: string
-  onSave: (checkedIds: string[]) => void
+  onSave: (checkedIds: string[]) => void | Promise<void>
   onBack: () => void
 }
 
 export function Compatibility({ catalog, optionName, stepId, initialChecked, excludeOptionId, onSave, onBack }: CompatibilityProps) {
   const [checked, setChecked] = useState(initialChecked)
+  const [saving, setSaving] = useState(false)
+  const [saveFailed, setSaveFailed] = useState(false)
+
+  async function save() {
+    setSaving(true)
+    setSaveFailed(false)
+    try {
+      await onSave(checked)
+    } catch {
+      setSaveFailed(true)
+    }
+    setSaving(false)
+  }
 
   function toggle(optionId: string) {
     setChecked(checked.includes(optionId) ? checked.filter(id => id !== optionId) : [...checked, optionId])
@@ -50,8 +63,9 @@ export function Compatibility({ catalog, optionName, stepId, initialChecked, exc
           </div>
         )
       })}
+      {saveFailed && <p className="error" role="alert">Couldn't save that option. Try again?</p>}
       <div className="footer">
-        <button className="btn" onClick={() => onSave(checked)}>Save option ({checked.length} checked)</button>
+        <button className="btn" disabled={saving} onClick={save}>Save option ({checked.length} checked)</button>
       </div>
     </div>
   )

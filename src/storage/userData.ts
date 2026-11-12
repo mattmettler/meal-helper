@@ -26,6 +26,18 @@ export async function addCustomOption(
   return id
 }
 
+export async function addCustomOptionWithClashes(
+  db: MealGuideDb,
+  input: { stepId: StepId; name: string; note?: string },
+  clashIds: string[],
+): Promise<string> {
+  return db.transaction('rw', db.customOptions, db.userPairs, async () => {
+    const id = await addCustomOption(db, input)
+    await setClashes(db, id, clashIds)
+    return id
+  })
+}
+
 export async function updateCustomOptionNote(db: MealGuideDb, optionId: string, note?: string): Promise<void> {
   const trimmed = note?.trim()
   await db.customOptions.update(optionId, { note: trimmed || undefined })
