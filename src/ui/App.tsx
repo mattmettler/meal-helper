@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { db } from '../storage/instance'
+import { saveMeal } from '../storage/savedMeals'
+import { Build } from './screens/Build'
 import { TabBar, type Tab } from './TabBar'
 import { useCatalog } from './useCatalog'
 
@@ -12,7 +15,7 @@ export function App() {
     <div className="app">
       <main className="screen">
         <section hidden={tab !== 'build'}>
-          <h1>Build a meal</h1>
+          <Build catalog={catalog} onSave={meal => { void saveMeal(db, meal).then(() => setTab('saved')) }} />
         </section>
         <section hidden={tab !== 'saved'}>
           <h1>Saved meals</h1>
