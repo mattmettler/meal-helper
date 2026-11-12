@@ -1,7 +1,7 @@
 # Improvised Meal Guide: Design
 
 Date: 2026-11-11
-Status: Draft for review
+Status: Approved
 Source: `PRD.md` plus the decisions below. Where this document and the PRD disagree, this document wins.
 
 ## 1. Purpose and audience
@@ -129,7 +129,7 @@ Bottom tab bar: Build, Saved, Options.
 
 ### 5.1 Visual design
 
-Mood: calm, gentle, cute, with muted but playful colors, in the spirit of apps built to be friendly to people with ADHD. Reference: `docs/mockups/mockup-v1.html` (approved direction, six screens).
+Mood: calm, gentle, cute, with muted but playful colors, in the spirit of apps built to be friendly to people with ADHD. References: `docs/mockups/mockup-v1.html` (approved direction: build steps, result, saved, options, "too thin") and `docs/mockups/mockup-v2.html` (add and edit options, hidden options, export and import).
 
 **Colors** (CSS custom properties on `:root`):
 
@@ -195,5 +195,5 @@ The PRD section 9 enhancements stay out: editing option names, reordering, optio
 
 - Verify `navigator.storage.persist()` and home-screen eviction behavior on a real iOS device.
 - Author supplies final content lists after the app works.
-- Mockups not yet drawn: the add-option compatibility checklist, the add-tip screen, and the saved-meal detail view.
+- Mockup not yet drawn: the saved-meal detail view.
 - Dark mode is undecided. The first release ships light only unless the author asks for it.
