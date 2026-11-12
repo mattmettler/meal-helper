@@ -3,7 +3,8 @@
 
 Only the white region connected to the image corner (the background) is
 recolored. Enclosed white areas inside the artwork (a bird's face, belly,
-wing stripes) stay white. Edge pixels are blended so there is no white halo.
+wing stripes) stay white unless you name them with --fill-point. Edge pixels
+are blended so there is no white halo.
 
 Standard library only. Reads an 8-bit, non-interlaced RGB or RGBA PNG and
 writes an opaque RGB PNG. With --center, the artwork is also shifted so its
@@ -125,6 +126,10 @@ def main():
     parser.add_argument("input", help="source PNG with dark artwork on a white background")
     parser.add_argument("output", help="where to write the recolored opaque PNG")
     parser.add_argument("--color", required=True, help="background color as hex, e.g. F6E3A1")
+    parser.add_argument("--fill-point", action="append", default=[], metavar="X,Y",
+                        type=lambda v: tuple(int(p) for p in v.split(",")),
+                        help="pixel in the input image inside an enclosed white area that should also "
+                             "become background (repeatable), e.g. the gap between a bird's legs")
     parser.add_argument("--center", action="store_true",
                         help="also shift the artwork so its bounding box is centered in the image")
     args = parser.parse_args()
@@ -153,19 +158,37 @@ def main():
     if light[0] <= OUTSIDE_THRESHOLD:
         fail("the top-left pixel is dark; expected a light background in the corner")
 
-    # Flood fill the background from the corner.
+    # Flood fill the background from the corner, then from any --fill-point seeds
+    # (white areas enclosed by the artwork that should also become background).
     outside = bytearray(count)
-    outside[0] = 1
-    queue = deque([0])
-    while queue:
-        i = queue.popleft()
-        x, y = i % width, i // width
-        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-            if 0 <= nx < width and 0 <= ny < height:
-                n = ny * width + nx
-                if not outside[n] and light[n] > OUTSIDE_THRESHOLD:
-                    outside[n] = 1
-                    queue.append(n)
+
+    def flood_fill(seed):
+        outside[seed] = 1
+        queue = deque([seed])
+        filled = 1
+        while queue:
+            i = queue.popleft()
+            x, y = i % width, i // width
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if 0 <= nx < width and 0 <= ny < height:
+                    n = ny * width + nx
+                    if not outside[n] and light[n] > OUTSIDE_THRESHOLD:
+                        outside[n] = 1
+                        queue.append(n)
+                        filled += 1
+        return filled
+
+    flood_fill(0)
+    for fx, fy in args.fill_point:
+        if not (0 <= fx < width and 0 <= fy < height):
+            fail(f"--fill-point {fx},{fy} is outside the {width}x{height} image")
+        seed = fy * width + fx
+        if light[seed] <= OUTSIDE_THRESHOLD:
+            fail(f"--fill-point {fx},{fy} is on dark artwork; pick a point inside the white area")
+        if outside[seed]:
+            print(f"note: --fill-point {fx},{fy} is already part of the background")
+        else:
+            print(f"--fill-point {fx},{fy}: recolored a {flood_fill(seed)}-pixel enclosed area")
 
     # Grow the region so antialiased edge pixels get blended too.
     grown = bytearray(outside)

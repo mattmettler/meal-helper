@@ -159,7 +159,7 @@ Each step owns one soft color (fill) and a deeper shade (borders, tip rules). Th
 - Rounded system font stack (`ui-rounded`, `SF Pro Rounded`, `Nunito`, `Segoe UI`, `system-ui`). No font files or remote fonts, per the offline requirement.
 - Selected option cards fill with the step color, show a check mark, and darken their border.
 
-**Brand:** the kestrel icon sits in each screen header. A larger version appears on the "too thin" message screen. Source art is in `assets/icon/`: the original EPS, a raw render with a white background (`icon-source-1024.png`), and the app icon (`icon-1024.png`) with a solid Starch yellow (`#F6E3A1`) background, made by `scripts/set-icon-background.py`. The app icon must be opaque (iOS fills transparent areas with black) and keep the artwork inside the central 80% of the canvas.
+**Brand:** the kestrel icon sits in each screen header. A larger version appears on the "too thin" message screen. Source art is in `assets/icon/`: the original EPS, a raw render with a white background (`icon-source-1024.png`), and the app icon (`icon-1024.png`) with a solid Starch yellow (`#F6E3A1`) background, made by `python scripts/set-icon-background.py assets/icon/icon-source-1024.png assets/icon/icon-1024.png --color F6E3A1 --center --fill-point 590,730` (the fill point is the gap between the bird's legs). The app icon must be opaque (iOS fills transparent areas with black) and keep the artwork inside the central 80% of the canvas.
 
 **Copy:** the thing the user makes is always called a "meal", never a "bowl" or "recipe".
 
