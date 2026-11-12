@@ -18,6 +18,7 @@ Each step has a list of options. Each option is a short block:
 Rules:
 
 - **Option names** must be written the same way everywhere. Claude matches them by name when it connects clashes.
+- **Every option name must be unique across ALL steps.** Clashes match by name, so a repeated name is ambiguous. If the same ingredient fits two steps, give the two options different names, for example "Avocado slices" and "Avocado".
 - **Note:** at most 40 characters. Required for every Sauces and Garnish/Texture option. Optional for the other steps (leave the line out for none).
 - **Tips:** one or two per option. A tip is advice about that one ingredient (how to handle it, when to add it, what to watch for). Don't write cooking instructions, quantities, or times.
 - **Doesn't go with:** the names of options that clash with this one, from any step (including this one). You only need to list a clash once, on either option, because it works both ways. Leave the line out if nothing clashes.
@@ -73,5 +74,5 @@ Delete the example block below when you're done.
 
 ## Notes for Claude
 
-- Option ids are made from the step and the name, for example `starch.brown-rice`. Once friends have the app, an option's id must never change. Renaming the displayed name later is always safe.
+- Option ids default to the step plus the kebab-cased name, for example `starch.brown-rice`. Once friends have the app, an option's id must never change. Renaming the displayed name is safe only if the entry keeps its old id by setting an explicit `id` on its entry in `seed.ts`.
 - When this content is converted, run the seed integrity tests and report anything they flag.

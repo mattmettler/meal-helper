@@ -96,7 +96,7 @@ On the result screen the name is pre-filled in an editable field. The user can a
 
 Three layers.
 
-1. **Content** (read-only, bundled): one data file (JSON or TypeScript) with the built-in steps, options, compatibility pairs, and tips. Built-in ids are stable strings that never change.
+1. **Content** (read-only, bundled): one data file (JSON or TypeScript) with the built-in steps, options, compatibility pairs, and tips. Built-in ids are stable strings that never change. Ids default to the step id plus the kebab-cased name. An entry can carry an explicit id so a renamed option keeps its old id. Display names are unique across the whole content file, enforced when the content is built.
 2. **Logic** (pure TypeScript, no UI or database imports): `availableOptions`, `validateMeal`, `buildMeal`, name generation, tip lookup. A merge function combines built-in and user data into one list so the logic never cares about an option's origin.
 3. **UI and storage**: thin React screens and Dexie for user data.
 
@@ -125,7 +125,7 @@ Bottom tab bar: Build, Saved, Options.
 - **Build**: one step at a time, progress indicator ("Step 3 of 6"), tappable option cards in a two-column grid (bold name, with the option's optional note in smaller text underneath), Back keeps picks, Next doubles as Skip when nothing is picked. After step 6, validate. Failure shows the message and resets. Success goes to Result. Build state is in memory only.
 - **Result**: name, picks grouped by step with tips inline under each option, editable name field (pre-filled), Save, Discard.
 - **Saved**: list ordered favorites first then newest. Heart toggle per row. Tapping a row opens a read-only view of the snapshot with a Delete button behind a confirm.
-- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add a tip to any option and delete tips you added, edit the note and clashes on your own options, hide any built-in option (restore it from the "Hidden options" list) or delete your own custom options (after a confirm), Export, Import, and a "last backed up N days ago" note. At the very bottom, below the backup tile, small centered credit text in two lines separated by a little space: "Icon image from vecteezy.com" and "Made by Matt for kestrel <3".
+- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add a tip to any option and delete tips you added, edit the note and clashes on your own options, hide any built-in option (restore it from the "Hidden options" list) or delete your own custom options (after a confirm), a backup tile with "Save a backup" and "Restore from a backup" buttons plus a "last backed up N days ago" note (the tile shows no counts). At the very bottom, below the backup tile, small centered credit text in two lines separated by a little space: "Icon image from vecteezy.com" and "Made by Matt for kestrel <3".
 
 ### 5.1 Visual design
 
@@ -171,7 +171,7 @@ Each step owns one soft color (fill) and a deeper shade (borders, tip rules). Th
 - Hosted on GitHub Pages. The Vite `base` path must match the repository name.
 - Updates reach a phone when the app is opened online and the new service worker activates.
 - On startup call `navigator.storage.persist()` and log the result to the console (it is not stored or shown). iOS behavior for home-screen apps must be verified on a real device before relying on it.
-- Export writes one JSON file with the five user-data tables and a format version. Import validates version and shape before wiping anything, then replaces local user data after a confirm. The file is saved with a plain browser download. Add the Web Share sheet only if downloading doesn't work in an installed iOS app.
+- Export writes one JSON file with the five user-data tables and a format version. Import validates version and shape before wiping anything, then replaces local user data after a confirm. The export screen reads its counts when it opens. The import screen reads the file's counts and the current counts when a file is chosen. No backup counts are computed at startup or on saves. The file is saved with a plain browser download. Add the Web Share sheet only if downloading doesn't work in an installed iOS app.
 - The app shows a gentle reminder when no backup exists and a meal is saved, or when the last backup is over 30 days old.
 - Residual risk: if iOS evicts the service worker cache itself, the app cannot reload offline until reinstalled from the fallback host. Backups protect data, not the app.
 
