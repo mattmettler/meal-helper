@@ -104,11 +104,13 @@ Three layers.
 
 | Table | Fields |
 | :--- | :--- |
-| customOptions | id (UUID), stepId, name, deleted |
+| customOptions | id (UUID), stepId, name, note (optional), deleted |
 | hiddenBuiltIns | optionId (built-in options the user deleted) |
 | userPairs | id, optionIdA, optionIdB |
 | userTips | id, optionId, text, order |
 | savedMeals | id, name, groups (step name, option names, tip texts as plain text), isFavorite, createdAt |
+
+Every option, built-in or custom, has an optional `note`: a few words shown on the option's card in the build step to add context (for example Sesame Seeds: "adds texture and good fats"). The field exists on all options to keep the schema uniform. The built-in content will fill it mainly for Sauces and Garnish/Texture. Notes are limited to about 40 characters so they fit on two lines, appear only on the step screen (not on the result screen or in saved meals, where tips do that job), and are not editable on built-in options in the first release.
 
 Saved meals store plain text so deleting or changing options never changes them. Deleting an option leaves its pairs and tips in place, so restoring it brings them back.
 
@@ -120,10 +122,10 @@ When a user adds an option, a checklist follows: every other option grouped by s
 
 Bottom tab bar: Build, Saved, Options.
 
-- **Build**: one step at a time, progress indicator ("Step 3 of 6"), tappable option chips, Back keeps picks, Next doubles as Skip when nothing is picked. After step 6, validate. Failure shows the message and resets. Success goes to Result. Build state is in memory only.
+- **Build**: one step at a time, progress indicator ("Step 3 of 6"), tappable option cards in a two-column grid (bold name, with the option's optional note in smaller text underneath), Back keeps picks, Next doubles as Skip when nothing is picked. After step 6, validate. Failure shows the message and resets. Success goes to Result. Build state is in memory only.
 - **Result**: name, picks grouped by step with tips inline under each option, editable name field (pre-filled), Save, Discard.
 - **Saved**: list ordered favorites first then newest. Heart toggle per row. Tapping a row opens a read-only view of the snapshot with a Delete button behind a confirm.
-- **Options**: options grouped by step. Add option (then the compatibility checklist), add tip to any option, delete (hide) any option, "Hidden options" list to restore, Export, Import, and a "last backed up N days ago" note.
+- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add tip to any option, delete (hide) any option, "Hidden options" list to restore, Export, Import, and a "last backed up N days ago" note.
 
 ### 5.1 Visual design
 
@@ -152,10 +154,10 @@ Each step owns one soft color (fill) and a deeper shade (borders, tip rules). Th
 
 **Shape and type:**
 
-- Pill-shaped chips and buttons, 20px card radius, soft low-contrast shadows, no hard edges.
+- Pill-shaped buttons. Option cards on the step screens use the same rounded look, laid out two per row with the same layout on every step (cards without a note are just shorter). 20px card radius, soft low-contrast shadows, no hard edges.
 - Minimum tap target 44px high.
 - Rounded system font stack (`ui-rounded`, `SF Pro Rounded`, `Nunito`, `Segoe UI`, `system-ui`). No font files or remote fonts, per the offline requirement.
-- Selected chips fill with the step color, show a check mark, and darken their border.
+- Selected option cards fill with the step color, show a check mark, and darken their border.
 
 **Brand:** the kestrel icon sits in each screen header. A larger version appears on the "too thin" message screen. Source art is in `assets/icon/`. Generated app icons need a solid background color (iOS fills transparent areas with black) and the artwork inside the central 80% of the canvas.
 
