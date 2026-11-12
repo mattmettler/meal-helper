@@ -96,7 +96,7 @@ On the result screen the name is pre-filled in an editable field. The user can a
 
 Three layers.
 
-1. **Content** (read-only, bundled): one data file (JSON or TypeScript) with the built-in steps, options, compatibility pairs, and tips. Built-in ids are stable strings that never change.
+1. **Content** (read-only, bundled): one data file (JSON or TypeScript) with the built-in steps, options, compatibility pairs, and tips. Built-in ids are stable strings that never change. Ids default to the step id plus the kebab-cased name. An entry can carry an explicit id so a renamed option keeps its old id. Display names are unique across the whole content file, enforced when the content is built.
 2. **Logic** (pure TypeScript, no UI or database imports): `availableOptions`, `validateMeal`, `buildMeal`, name generation, tip lookup. A merge function combines built-in and user data into one list so the logic never cares about an option's origin.
 3. **UI and storage**: thin React screens and Dexie for user data.
 

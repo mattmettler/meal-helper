@@ -1,7 +1,8 @@
 import type { Pair, Seed, StepId } from '../logic/types'
 
-interface SeedEntry {
+export interface SeedEntry {
   name: string
+  id?: string
   note?: string
   tips: string[]
   doesntGoWith?: string[]
@@ -74,12 +75,16 @@ const STEP_ORDER: StepId[] = ['starch', 'greens', 'protein', 'veggies', 'sauces'
 
 const kebab = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
-function buildSeed(): Seed {
+export function buildSeed(entries: Record<StepId, SeedEntry[]>): Seed {
   const seed: Seed = { options: [], pairs: [], tips: [] }
   const idByName = new Map<string, string>()
+  const usedIds = new Set<string>()
   for (const stepId of STEP_ORDER) {
-    for (const entry of ENTRIES[stepId]) {
-      const id = `${stepId}.${kebab(entry.name)}`
+    for (const entry of entries[stepId]) {
+      const id = entry.id ?? `${stepId}.${kebab(entry.name)}`
+      if (idByName.has(entry.name)) throw new Error(`Seed option name "${entry.name}" is used more than once`)
+      if (usedIds.has(id)) throw new Error(`Seed option id "${id}" is used more than once (option "${entry.name}")`)
+      usedIds.add(id)
       idByName.set(entry.name, id)
       seed.options.push({ id, stepId, name: entry.name, ...(entry.note ? { note: entry.note } : {}) })
       entry.tips.forEach((text, i) => seed.tips.push({ id: `${id}#${i + 1}`, optionId: id, text }))
@@ -92,7 +97,7 @@ function buildSeed(): Seed {
   }
   const seen = new Set<string>()
   for (const stepId of STEP_ORDER) {
-    for (const entry of ENTRIES[stepId]) {
+    for (const entry of entries[stepId]) {
       for (const other of entry.doesntGoWith ?? []) {
         const pair: Pair = { a: idFor(entry.name), b: idFor(other) }
         const key = [pair.a, pair.b].sort().join('|')
@@ -106,4 +111,4 @@ function buildSeed(): Seed {
   return seed
 }
 
-export const SEED: Seed = buildSeed()
+export const SEED: Seed = buildSeed(ENTRIES)
