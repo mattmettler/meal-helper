@@ -177,7 +177,7 @@ Each step owns one soft color (fill) and a deeper shade (borders, tip rules). Th
 
 ## 7. Seed content
 
-The implementer drafts a starter set: roughly 6 to 10 options per step, sensible compatibility pairs, and one or two tips per option, stored in the content file. The author will replace or extend it with their own lists later. Replacing content must not require code changes.
+The implementer drafts a starter set: roughly 6 to 10 options per step, sensible compatibility pairs, and one or two tips per option, stored in the content file. The author will replace or extend it with their own lists later by filling in `docs/seed-content-template.md`, which the implementer converts into the content file. Replacing content must not require code changes beyond that file.
 
 ## 8. Testing
 
