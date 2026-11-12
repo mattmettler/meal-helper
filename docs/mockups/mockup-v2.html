@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Improvised Meal Guide: Mockup v2</title>
+<style>
+  :root {
+    --bg: #FBF6EE;
+    --card: #FFFFFF;
+    --ink: #4A4458;
+    --ink-soft: #8A8497;
+    --line: #EDE4D6;
+
+    /* one soft accent per step */
+    --starch: #F6E3A1;   --starch-d: #E9CB6B;
+    --greens: #BCD7B1;   --greens-d: #8FBC82;
+    --protein: #F4BFA9;  --protein-d: #E89A7B;
+    --veggies: #B5D5E3;  --veggies-d: #86B9D0;
+    --sauces: #D3C3E8;   --sauces-d: #B09BD3;
+    --garnish: #F2C4D3;  --garnish-d: #E29AB3;
+
+    --radius: 20px;
+    --shadow: 0 4px 14px rgba(74, 68, 88, 0.10);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 16px 64px;
+    background: #EFE8DC;
+    font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+  }
+  h1 { text-align: center; font-size: 22px; margin: 0 0 4px; }
+  .sub { text-align: center; color: var(--ink-soft); margin: 0 0 28px; font-size: 14px; }
+  .board { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; }
+  figure { margin: 0; }
+  figcaption { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: 10px; }
+
+  /* phone frame */
+  .phone {
+    width: 360px; height: 720px; background: var(--bg);
+    border-radius: 36px; border: 8px solid #3F3A4B;
+    overflow: hidden; position: relative; display: flex; flex-direction: column;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+  }
+  .screen { flex: 1; overflow-y: auto; padding: 18px 18px 12px; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* header */
+  .top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; background: #fff; box-shadow: var(--shadow); padding: 2px; }
+  .top .title { font-weight: 800; font-size: 16px; }
+  .top .back { margin-left: auto; font-size: 13px; color: var(--ink-soft); }
+
+  /* progress */
+  .progress { display: flex; gap: 6px; margin-bottom: 6px; }
+  .progress i { flex: 1; height: 8px; border-radius: 99px; background: var(--line); }
+  .progress i.done { background: var(--c); }
+  .progress i.now { background: var(--c); box-shadow: 0 0 0 3px rgba(74,68,88,0.10); }
+  .stepcount { font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
+
+  .bubble {
+    background: var(--c); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
+  }
+  .bubble h2 { margin: 0 0 2px; font-size: 22px; }
+  .bubble p { margin: 0; font-size: 13px; color: var(--ink); opacity: 0.8; }
+
+  /* chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    border: 2px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 99px; padding: 11px 16px; font: inherit; font-size: 15px; font-weight: 600;
+    min-height: 44px; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .chip[aria-pressed="true"] { background: var(--c); border-color: var(--cd); }
+  .chip[aria-pressed="true"]::before { content: "✓ "; }
+
+  .chips.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .chips.grid .chip { border-radius: 18px; text-align: left; padding: 12px 14px; }
+  .chip small { display: block; font-weight: 600; font-size: 12px; color: var(--ink-soft); margin-top: 2px; line-height: 1.3; }
+
+  /* buttons */
+  .btn {
+    display: block; width: 100%; border: 0; border-radius: 99px; padding: 15px;
+    font: inherit; font-weight: 800; font-size: 16px; color: var(--ink); cursor: pointer;
+    background: var(--c, #F4BFA9); box-shadow: var(--shadow);
+  }
+  .btn.ghost { background: transparent; box-shadow: none; color: var(--ink-soft); font-weight: 700; }
+  .footer { padding: 10px 18px 14px; }
+
+  /* tab bar */
+  .tabs { display: flex; background: #fff; border-top: 1px solid var(--line); padding: 8px 6px 12px; }
+  .tabs div { flex: 1; text-align: center; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+  .tabs div span { display: block; font-size: 20px; }
+  .tabs .on { color: var(--ink); }
+  .tabs .on span { filter: none; }
+
+  /* cards */
+  .card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .group-label { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; background: var(--c); margin-bottom: 8px; }
+  .pick { font-weight: 800; font-size: 16px; margin: 4px 0 2px; }
+  .tip { font-size: 13px; color: var(--ink-soft); margin: 0 0 8px; padding-left: 12px; border-left: 3px solid var(--cd); }
+  .mealname { font-size: 24px; font-weight: 800; line-height: 1.2; margin: 4px 0 14px; }
+  .field { width: 100%; border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; font: inherit; font-size: 15px; font-weight: 700; background: #fff; color: var(--ink); margin-bottom: 12px; }
+  label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display: block; margin: 8px 0 4px; }
+
+  /* saved list */
+  .row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); margin-bottom: 10px; }
+  .row .name { font-weight: 800; font-size: 15px; }
+  .row .when { font-size: 12px; color: var(--ink-soft); }
+  .row .heart { margin-left: auto; font-size: 22px; }
+  .sect { font-size: 12px; font-weight: 800; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; margin: 14px 2px 8px; }
+
+  /* options screen */
+  .optgroup { margin-bottom: 14px; }
+  .mini { display: inline-block; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 99px; background: var(--c); margin: 0 6px 6px 0; }
+  .mini.custom { border: 2px dashed var(--cd); background: #fff; }
+  .addrow { font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+  .backup { background: #F3EEFA; border-radius: var(--radius); padding: 14px 16px; }
+  .backup p { margin: 0 0 10px; font-size: 13px; }
+
+  /* too thin */
+  .center { text-align: center; padding-top: 60px; }
+  .center img { width: 120px; height: 120px; border-radius: 28px; background: #fff; box-shadow: var(--shadow); padding: 8px; }
+  .center h2 { font-size: 20px; margin: 22px 8px 8px; line-height: 1.35; }
+  .center p { color: var(--ink-soft); font-size: 14px; margin: 0 20px 24px; }
+
+  .sg { --c: var(--starch);  --cd: var(--starch-d); }
+  .gr { --c: var(--greens);  --cd: var(--greens-d); }
+  .pr { --c: var(--protein); --cd: var(--protein-d); }
+  .fv { --c: var(--veggies); --cd: var(--veggies-d); }
+  .sa { --c: var(--sauces);  --cd: var(--sauces-d); }
+  .ga { --c: var(--garnish); --cd: var(--garnish-d); }
+
+  /* v2 additions */
+  .counter { text-align: right; font-size: 12px; color: var(--ink-soft); margin: -6px 4px 12px; }
+  .steppicker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .pill { border-radius: 99px; padding: 8px 12px; font-size: 13px; font-weight: 700; background: var(--c); border: 2px solid transparent; opacity: .6; cursor: pointer; }
+  .pill.on { opacity: 1; border-color: var(--cd); }
+  .pill.on::before { content: "\2713 "; }
+  .checkrow { display: flex; align-items: center; gap: 12px; padding: 6px 4px; font-weight: 600; font-size: 15px; min-height: 44px; cursor: pointer; }
+  .box { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--line); background: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; flex: none; }
+  .checkrow.on .box { background: var(--c); border-color: var(--cd); }
+  .checkrow.on .box::after { content: "\2713"; }
+  .tiprow { display: flex; gap: 10px; align-items: flex-start; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; border-left: 4px solid var(--cd); font-size: 13px; }
+  .tiprow.locked { background: #F6F1E8; color: var(--ink-soft); }
+  .tiprow .x { margin-left: auto; color: var(--ink-soft); font-weight: 800; font-size: 16px; cursor: pointer; padding: 0 4px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 99px; background: #fff; border: 2px dashed var(--cd); margin-left: 6px; }
+  .badge.solid { border-style: solid; border-color: var(--line); color: var(--ink-soft); }
+  .warn { background: #FBE3D8; border: 2px solid var(--protein-d); border-radius: var(--radius); padding: 14px 16px; margin: 14px 0; font-size: 14px; }
+  .stat { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .stat:last-child { border-bottom: 0; }
+  .stat b { font-weight: 800; }
+  .filepill { background: #fff; border-radius: 14px; padding: 12px 14px; font-weight: 700; font-size: 13px; word-break: break-all; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .restore { margin-left: auto; border: 0; border-radius: 99px; padding: 9px 16px; font: inherit; font-weight: 800; font-size: 13px; background: var(--c); cursor: pointer; min-height: 40px; }
+  .hint { font-size: 13px; color: var(--ink-soft); margin: 4px 2px 14px; line-height: 1.4; }
+  textarea.field { resize: none; height: 76px; font-weight: 600; }
+  .linkrow { display: flex; align-items: center; font-size: 14px; font-weight: 700; }
+  .linkrow .go { margin-left: auto; color: var(--ink-soft); }
+  .btn + .btn { margin-top: 8px; }
+  .btn.danger { background: var(--protein); }
+</style>
+</head>
+<body>
+<h1>Improvised Meal Guide</h1>
+<p class="sub">Mockup v2: add and edit options, backup and restore. Checkboxes and step pills are tappable.</p>
+<div class="board">
+  <figure>
+    <div class="phone">
+      <div class="screen sg">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-1024.png" alt=""><span class="title">Add an option</span><span class="back">‹ Options</span></div>
+        <label class="small">Which step?</label>
+        <div class="steppicker" data-picker><span class="pill sg on">Starch / Base</span><span class="pill gr">Greens</span><span class="pill pr">Protein</span><span class="pill fv">Filler Veggies</span><span class="pill sa">Sauces</span><span class="pill ga">Garnish / Texture</span></div>
+        <label class="small">Name</label>
+        <input class="field" value="Farro">
+        <label class="small">Short note (optional)</label>
+        <input class="field" id="note" maxlength="40" value="chewy and nutty" style="margin-bottom:6px">
+        <div class="counter" id="count">15 / 40</div>
+        <label class="small">How it will look</label>
+        <div class="chips grid"><div class="chip" aria-pressed="true"><b>Farro</b><small>chewy and nutty</small></div></div>
+      </div>
+      <div class="footer sg"><button class="btn">Next: what doesn't it go with?</button></div>
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Add an option</figcaption>
+  </figure>
+  <figure>
+    <div class="phone">
+      <div class="screen sg">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-1024.png" alt=""><span class="title">Farro</span><span class="back">‹ Back</span></div>
+        <div class="bubble"><h2>Doesn't go with?</h2><p>Check anything that clashes with Farro. Leave it blank if nothing does.</p></div>
+        <div class="sg" style="margin-bottom:12px"><span class="group-label">Starch / Base</span><div class="checkrow"><span class="box"></span>Brown rice</div><div class="checkrow on"><span class="box"></span>Rice noodles</div><div class="checkrow"><span class="box"></span>Pasta</div></div>
+        <div class="gr" style="margin-bottom:12px"><span class="group-label">Greens</span><div class="checkrow"><span class="box"></span>Spinach</div><div class="checkrow"><span class="box"></span>Kale</div><div class="checkrow"><span class="box"></span>Arugula</div></div>
+        <div class="pr" style="margin-bottom:12px"><span class="group-label">Protein</span><div class="checkrow"><span class="box"></span>Chicken thighs</div><div class="checkrow"><span class="box"></span>Tofu</div><div class="checkrow"><span class="box"></span>Salmon</div></div>
+        <div class="sa" style="margin-bottom:12px"><span class="group-label">Sauces</span><div class="checkrow on"><span class="box"></span>Peanut sauce</div><div class="checkrow"><span class="box"></span>Tahini</div><div class="checkrow"><span class="box"></span>Pesto</div></div>
+      </div>
+      <div class="footer sg"><button class="btn">Save option (2 checked)</button></div>
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Compatibility checklist</figcaption>
+  </figure>
+  <figure>
+    <div class="phone">
+      <div class="screen sg">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-1024.png" alt=""><span class="title">Farro</span><span class="back">‹ Options</span></div>
+        <div class="card"><span class="group-label">Starch / Base</span><span class="badge">your own</span>
+          <label class="small">Short note</label>
+          <input class="field" value="chewy and nutty" style="margin-bottom:0">
+          <div class="counter" style="margin-top:6px">15 / 40</div>
+        </div>
+        <div class="card"><div class="linkrow">Doesn't go with<span class="go">Edit ›</span></div>
+          <div class="hint" style="margin:6px 0 0">Rice noodles, Peanut sauce</div></div>
+        <div class="sect">Your tips</div>
+        <div class="tiprow"><span>Rinse first and simmer 25 minutes until tender.</span><span class="x">✕</span></div>
+        <textarea class="field" placeholder="Add a tip for Farro"></textarea>
+        <button class="btn" style="--c:var(--starch)">Add tip</button>
+        <button class="btn ghost">Hide this option</button>
+      </div>
+      
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Edit your own option</figcaption>
+  </figure>
+  <figure>
+    <div class="phone">
+      <div class="screen pr">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-1024.png" alt=""><span class="title">Chicken thighs</span><span class="back">‹ Options</span></div>
+        <div class="card"><span class="group-label">Protein</span><span class="badge solid">built in</span>
+          <div class="pick" style="margin-top:8px">Juicy and forgiving</div>
+          <div class="hint" style="margin:2px 0 0">Built-in notes can't be edited.</div>
+        </div>
+        <div class="sect">Built-in tips</div>
+        <div class="tiprow locked"><span>Pat dry and leave it untouched in the pan for a good crust.</span><span>🔒</span></div>
+        <div class="sect">Your tips</div>
+        <div class="tiprow"><span>Marinate in yogurt and lemon for extra tender meat.</span><span class="x">✕</span></div>
+        <textarea class="field" placeholder="Add a tip for Chicken thighs"></textarea>
+        <button class="btn" style="--c:var(--protein)">Add tip</button>
+        <button class="btn ghost">Hide this option</button>
+      </div>
+      
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Built-in option: tips can be added, not changed</figcaption>
+  </figure>
+  <figure>
+    <div class="phone">
+      <div class="screen ">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-1024.png" alt=""><span class="title">Hidden options</span><span class="back">‹ Options</span></div>
+        <p class="hint">Hidden options don't show up when you build a meal. Their tips and clashes are kept, so restoring one brings everything back.</p>
+        <div class="row ga"><div><div class="name">Crispy shallots</div><div class="when">Garnish / Texture</div></div><button class="restore">Restore</button></div>
+        <div class="row gr"><div><div class="name">Cabbage</div><div class="when">Greens</div></div><button class="restore">Restore</button></div>
+        <div class="row sa"><div><div class="name">Pesto</div><div class="when">Sauces</div></div><button class="restore">Restore</button></div>
+      </div>
+      
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Hidden options</figcaption>
+  </figure>
+  <figure>
+    <div class="phone">
+      <div class="screen sa">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-1024.png" alt=""><span class="title">Back up your data</span><span class="back">‹ Options</span></div>
+        <div class="bubble"><h2>Save a backup</h2><p>Last backed up 12 days ago.</p></div>
+        <div class="card">
+          <div class="stat"><span>Custom options</span><b>4</b></div>
+          <div class="stat"><span>Your tips</span><b>6</b></div>
+          <div class="stat"><span>Clashes you set</span><b>12</b></div>
+          <div class="stat"><span>Hidden options</span><b>3</b></div>
+          <div class="stat"><span>Saved meals</span><b>9</b></div>
+        </div>
+        <div class="hint">Built-in options come with the app, so they aren't in the file.</div>
+        <div class="filepill">meal-guide-backup-2026-11-11.json</div>
+        <div class="hint">Your phone will ask where to save it. Keep a copy somewhere outside this app, like Files or cloud storage.</div>
+      </div>
+      <div class="footer sa"><button class="btn">Save backup file</button></div>
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Export</figcaption>
+  </figure>
+  <figure>
+    <div class="phone">
+      <div class="screen pr">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-1024.png" alt=""><span class="title">Restore from backup</span><span class="back">‹ Options</span></div>
+        <div class="filepill">meal-guide-backup-2026-10-30.json</div>
+        <div class="card"><div class="sect" style="margin-top:0">This backup has</div>
+          <div class="stat"><span>Custom options</span><b>3</b></div>
+          <div class="stat"><span>Your tips</span><b>5</b></div>
+          <div class="stat"><span>Clashes you set</span><b>10</b></div>
+          <div class="stat"><span>Saved meals</span><b>7</b></div>
+        </div>
+        <div class="warn"><b>This replaces what's on this phone now:</b> 4 custom options, 6 tips, and 9 saved meals. It can't be undone.</div>
+      </div>
+      <div class="footer pr"><button class="btn danger">Replace my data</button><button class="btn ghost">Cancel</button></div>
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Import: confirm</figcaption>
+  </figure>
+  <figure>
+    <div class="phone">
+      <div class="screen gr">
+        <div class="center"><img src="../../assets/icon/icon-1024.png" alt="">
+          <h2>All restored!</h2>
+          <p>3 custom options, 5 tips, and 7 saved meals are back.</p>
+          <button class="btn" style="--c:var(--greens)">Done</button></div>
+      </div>
+      
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Import: success</figcaption>
+  </figure>
+  <figure>
+    <div class="phone">
+      <div class="screen pr">
+        <div class="center"><img src="../../assets/icon/icon-1024.png" alt="">
+          <h2>Hmm, that doesn't look like one of my backups.</h2>
+          <p>Nothing was changed. Try picking a different file.</p>
+          <button class="btn" style="--c:var(--protein)">Choose another file</button></div>
+      </div>
+      
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Import: bad file</figcaption>
+  </figure>
+
+</div>
+<script>
+  document.querySelectorAll('.chips[data-mode]').forEach(function (group) {
+    group.addEventListener('click', function (e) {
+      var chip = e.target.closest('.chip'); if (!chip) return;
+      var on = chip.getAttribute('aria-pressed') === 'true';
+      if (group.dataset.mode === 'single') group.querySelectorAll('.chip').forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
+      chip.setAttribute('aria-pressed', on ? 'false' : 'true');
+    });
+  });
+  document.querySelectorAll('.checkrow').forEach(function (r) {
+    r.addEventListener('click', function () { r.classList.toggle('on'); });
+  });
+  document.querySelectorAll('[data-picker]').forEach(function (p) {
+    p.addEventListener('click', function (e) {
+      var pill = e.target.closest('.pill'); if (!pill) return;
+      p.querySelectorAll('.pill').forEach(function (x) { x.classList.remove('on'); });
+      pill.classList.add('on');
+    });
+  });
+  var note = document.getElementById('note'), count = document.getElementById('count');
+  if (note) note.addEventListener('input', function () { count.textContent = note.value.length + ' / 40'; });
+</script>
+</body>
+</html>
