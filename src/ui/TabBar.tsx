@@ -1,7 +1,7 @@
 export type Tab = 'build' | 'saved' | 'options'
 
 const TABS: Array<{ id: Tab; icon: string; label: string }> = [
-  { id: 'build', icon: '🥣', label: 'Build' },
+  { id: 'build', icon: '🥘', label: 'Build' },
   { id: 'saved', icon: '💛', label: 'Saved' },
   { id: 'options', icon: '🌿', label: 'Options' },
 ]

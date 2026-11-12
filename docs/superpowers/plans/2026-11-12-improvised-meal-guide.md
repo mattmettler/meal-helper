@@ -309,7 +309,7 @@ export interface UserData {
 - Produces:
   - `useCatalog(db?: MealGuideDb): Catalog | undefined` — `undefined` until loaded, then re-renders when any user-data table changes (`useLiveQuery`).
   - `stepClass(stepId: StepId): string` returning `step-<id>` (CSS classes set `--c` and `--cd` per step).
-  - `<TabBar tab onChange />` with tabs Build, Saved, Options (labels exactly these, 🥣 💛 🌿).
+  - `<TabBar tab onChange />` with tabs Build, Saved, Options (labels exactly these, 🥘 💛 🌿).
   - `<App />` holds the current tab in state, builds the catalog, and renders the screens from Tasks 11 to 15.
 
 - [ ] **Step 1: Write failing tests.** `useCatalog.test.tsx`: `renderHook` with a fresh `createDb` returns `undefined` then a catalog containing seed options; after `addCustomOption` the hook returns a catalog that includes the new option. `App.test.tsx`: renders the three tab labels; clicking Saved and Options switches the visible heading; no visible text contains "bowl".
