@@ -12,7 +12,6 @@ import {
 import { backupFileName } from './backupFileName'
 import { downloadFile } from './downloadFile'
 import { BackupExport } from './screens/BackupExport'
-import { BackupHome } from './screens/BackupHome'
 import { BackupImport } from './screens/BackupImport'
 import { Build } from './screens/Build'
 import type { ReminderState } from './screens/BackupReminder'
@@ -34,7 +33,6 @@ type OptionsView =
   | { screen: 'detail'; optionId: string }
   | { screen: 'editClashes'; optionId: string }
   | { screen: 'hidden' }
-  | { screen: 'backup' }
   | { screen: 'backupExport'; fileName: string }
   | { screen: 'backupImport' }
 
@@ -51,9 +49,7 @@ export function App() {
     return { show: backupReminder({ lastBackupAt, now: Date.now(), savedMealCount }), lastBackupAt }
   }, [])
 
-  const backupSummary = useLiveQuery(async () => summarizeBackup(await exportBackup(db)), [])
-
-  if (!catalog || !meals || !reminder || !backupSummary) return <p className="loading">Loading...</p>
+  if (!catalog || !meals || !reminder) return <p className="loading">Loading...</p>
 
   const openMeal = meals.find(m => m.id === openMealId)
   const backToOptions = () => setOptionsView({ screen: 'home' })
@@ -62,6 +58,7 @@ export function App() {
     downloadFile(new File([text], fileName, { type: 'application/json' }))
     await recordBackupExport(db)
   }
+  const countCurrentData = async () => summarizeBackup(await exportBackup(db))
   const replaceAllData = async (file: BackupFile) => {
     await importBackup(db, file)
     setBuildKey(key => key + 1)
@@ -152,27 +149,20 @@ export function App() {
               onBack={backToOptions}
             />
           )}
-          {optionsView.screen === 'backup' && (
-            <BackupHome
-              onExport={() => setOptionsView({ screen: 'backupExport', fileName: backupFileName(new Date()) })}
-              onImport={() => setOptionsView({ screen: 'backupImport' })}
-              onBack={backToOptions}
-            />
-          )}
           {optionsView.screen === 'backupExport' && (
             <BackupExport
-              summary={backupSummary}
+              loadSummary={countCurrentData}
               lastBackupAt={reminder.lastBackupAt}
               fileName={optionsView.fileName}
               onSave={() => saveBackupFile(optionsView.fileName)}
-              onBack={() => setOptionsView({ screen: 'backup' })}
+              onBack={backToOptions}
             />
           )}
           {optionsView.screen === 'backupImport' && (
             <BackupImport
-              currentSummary={backupSummary}
+              loadCurrentSummary={countCurrentData}
               onReplace={replaceAllData}
-              onBack={() => setOptionsView({ screen: 'backup' })}
+              onBack={backToOptions}
             />
           )}
           {optionsView.screen === 'home' && (
@@ -181,7 +171,8 @@ export function App() {
               onOpenOption={optionId => setOptionsView({ screen: 'detail', optionId })}
               onAdd={stepId => setOptionsView({ screen: 'add', stepId })}
               onOpenHidden={() => setOptionsView({ screen: 'hidden' })}
-              onOpenBackup={() => setOptionsView({ screen: 'backup' })}
+              onExport={() => setOptionsView({ screen: 'backupExport', fileName: backupFileName(new Date()) })}
+              onImport={() => setOptionsView({ screen: 'backupImport' })}
               reminder={reminder}
             />
           )}

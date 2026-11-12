@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { STEPS } from '../../logic/steps'
 import type { Catalog, StepId } from '../../logic/types'
 import { backupAge } from '../backupAge'
@@ -10,11 +11,12 @@ interface OptionsProps {
   onOpenOption: (id: string) => void
   onAdd: (stepId: StepId) => void
   onOpenHidden: () => void
-  onOpenBackup: () => void
+  onExport: () => void
+  onImport: () => void
   reminder: ReminderState
 }
 
-export function Options({ catalog, onOpenOption, onAdd, onOpenHidden, onOpenBackup, reminder }: OptionsProps) {
+export function Options({ catalog, onOpenOption, onAdd, onOpenHidden, onExport, onImport, reminder }: OptionsProps) {
   const hiddenCount = catalog.options.filter(o => o.hidden && !o.isCustom).length
 
   return (
@@ -45,10 +47,12 @@ export function Options({ catalog, onOpenOption, onAdd, onOpenHidden, onOpenBack
       <button className="linkrow" onClick={onOpenHidden}>
         Hidden options ({hiddenCount})<span className="go" aria-hidden="true">&rsaquo;</span>
       </button>
-      <button className="backup" onClick={onOpenBackup}>
-        <b>Backup</b>
-        <span>{backupAge(reminder.lastBackupAt)}</span>
-      </button>
+      <div className="backup">
+        <h2>Backup</h2>
+        <p>{backupAge(reminder.lastBackupAt)}</p>
+        <button className="btn" style={{ '--c': 'var(--sauces)' } as CSSProperties} onClick={onExport}>Save a backup</button>
+        <button className="btn ghost" onClick={onImport}>Restore from a backup</button>
+      </div>
       <div className="legal">
         <p>Icon image from vecteezy.com</p>
         <p>Made by Matt for kestrel &lt;3</p>

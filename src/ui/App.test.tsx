@@ -20,6 +20,12 @@ async function openTab(user: ReturnType<typeof userEvent.setup>, label: string) 
   await user.click(within(nav).getByRole('button', { name: label }))
 }
 
+async function enabledSaveBackupFile() {
+  const button = await screen.findByRole('button', { name: 'Save backup file' })
+  await waitFor(() => expect(button).toBeEnabled())
+  return button
+}
+
 describe('App', () => {
   afterEach(async () => {
     await Promise.all(db.tables.map(table => table.clear()))
@@ -116,9 +122,8 @@ describe('App', () => {
     try {
       render(<App />)
       await user.click(await screen.findByRole('button', { name: /Options/ }))
-      await user.click(screen.getByRole('button', { name: /^Backup/ }))
       await user.click(screen.getByRole('button', { name: 'Save a backup' }))
-      await user.click(screen.getByRole('button', { name: 'Save backup file' }))
+      await user.click(await enabledSaveBackupFile())
       await waitFor(() => expect(screen.getByText('Last backed up today')).toBeVisible())
       expect(downloadFile).toHaveBeenCalledTimes(1)
       expect(vi.mocked(downloadFile).mock.calls[0][0].name).toMatch(/^meal-guide-backup-\d{4}-\d{2}-\d{2}\.json$/)
@@ -134,14 +139,64 @@ describe('App', () => {
     try {
       render(<App />)
       await user.click(await screen.findByRole('button', { name: /Options/ }))
-      await user.click(screen.getByRole('button', { name: /^Backup/ }))
       await user.click(screen.getByRole('button', { name: 'Save a backup' }))
-      await user.click(screen.getByRole('button', { name: 'Save backup file' }))
+      await user.click(await enabledSaveBackupFile())
       expect(await screen.findByRole('alert')).toBeVisible()
       expect(await getLastBackupAt(db)).toBeNull()
     } finally {
       await db.settings.clear()
     }
+  })
+
+  it('shows no counts in the Options backup tile', async () => {
+    const user = userEvent.setup()
+    await saveMeal(db, aMeal('Counted dinner'))
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /Options/ }))
+    expect(screen.getByRole('button', { name: 'Save a backup' })).toBeVisible()
+    expect(screen.queryByText('Clashes you set')).not.toBeInTheDocument()
+    expect(screen.queryByText('Counting your data...')).not.toBeInTheDocument()
+  })
+
+  it('shows the Build screen first without any backup counts', async () => {
+    await saveMeal(db, aMeal('First dinner'))
+    await saveMeal(db, aMeal('Second dinner'))
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Build a meal' })).toBeVisible()
+    expect(screen.queryByText('Clashes you set')).not.toBeInTheDocument()
+    expect(screen.queryByText('Counting your data...')).not.toBeInTheDocument()
+  })
+
+  it('opens the export screen with counts that match the data, and Back returns to Options', async () => {
+    const user = userEvent.setup()
+    await saveMeal(db, aMeal('First dinner'))
+    await saveMeal(db, aMeal('Second dinner'))
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /Options/ }))
+    await user.click(screen.getByRole('button', { name: 'Save a backup' }))
+    const counts = within((await screen.findByRole('heading', { name: 'Back up your data' })).closest<HTMLElement>('.step-sauces')!)
+    expect((await counts.findByText('Saved meals')).parentElement).toHaveTextContent('Saved meals2')
+    await user.click(screen.getByRole('button', { name: /‹ Options/ }))
+    expect(screen.getByRole('heading', { name: 'Your options' })).toBeVisible()
+  })
+
+  it('shows both counts when a file is chosen to restore, and Back returns to Options', async () => {
+    const user = userEvent.setup()
+    await saveMeal(db, aMeal('Dinner'))
+    const backupText = serializeBackup(await exportBackup(db))
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /Options/ }))
+    await user.click(screen.getByRole('button', { name: 'Restore from a backup' }))
+    expect(screen.queryByText('This backup has')).not.toBeInTheDocument()
+    await user.upload(
+      screen.getByLabelText('Choose a backup file'),
+      new File([backupText], 'meal-guide-backup-2026-11-11.json', { type: 'application/json' }),
+    )
+    expect(await screen.findByText('This backup has')).toBeVisible()
+    await waitFor(() => expect(document.querySelector('.warn')).toHaveTextContent('0 custom options, 0 tips, and 1 saved meal.'))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: /‹ Options/ }))
+    expect(screen.getByRole('heading', { name: 'Your options' })).toBeVisible()
   })
 
   it('restores a backup and starts the meal build over', async () => {
@@ -153,7 +208,6 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Next' }))
     expect(screen.getByText('Step 2 of 6')).toBeVisible()
     await user.click(screen.getByRole('button', { name: /Options/ }))
-    await user.click(screen.getByRole('button', { name: /^Backup/ }))
     await user.click(screen.getByRole('button', { name: 'Restore from a backup' }))
     await user.upload(
       screen.getByLabelText('Choose a backup file'),

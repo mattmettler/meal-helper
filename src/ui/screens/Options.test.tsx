@@ -24,7 +24,8 @@ function renderOptions(reminder: ReminderState = noReminder, handlers: Partial<P
       onOpenOption={() => {}}
       onAdd={() => {}}
       onOpenHidden={() => {}}
-      onOpenBackup={() => {}}
+      onExport={() => {}}
+      onImport={() => {}}
       reminder={reminder}
       {...handlers}
     />,
@@ -34,7 +35,7 @@ function renderOptions(reminder: ReminderState = noReminder, handlers: Partial<P
 describe('Options', () => {
   it('shows the kestrel logo in the header from a local asset', () => {
     const { container } = render(
-      <Options catalog={catalog} onOpenOption={() => {}} onAdd={() => {}} onOpenHidden={() => {}} onOpenBackup={() => {}} reminder={noReminder} />,
+      <Options catalog={catalog} onOpenOption={() => {}} onAdd={() => {}} onOpenHidden={() => {}} onExport={() => {}} onImport={() => {}} reminder={noReminder} />,
     )
     const logo = container.querySelector('.top img.logo')
     expect(logo).toHaveAttribute('src', expect.stringMatching(/^\/.*pwa-64x64\.png$/))
@@ -93,11 +94,30 @@ describe('Options', () => {
     expect(screen.getByText('No backup yet')).toBeInTheDocument()
   })
 
-  it('opens the backup screen', async () => {
-    const onOpenBackup = vi.fn()
-    renderOptions(noReminder, { onOpenBackup })
-    await userEvent.click(screen.getByRole('button', { name: /Backup/ }))
-    expect(onOpenBackup).toHaveBeenCalled()
+  it('has Save a backup and Restore from a backup buttons and no counts in the backup tile', () => {
+    renderOptions()
+    expect(screen.getByRole('heading', { name: 'Backup' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save a backup' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Restore from a backup' })).toBeInTheDocument()
+    expect(screen.queryByText(/saved meal|tips|custom options/i)).not.toBeInTheDocument()
+  })
+
+  it('starts a backup export from Save a backup', async () => {
+    const onExport = vi.fn()
+    const onImport = vi.fn()
+    renderOptions(noReminder, { onExport, onImport })
+    await userEvent.click(screen.getByRole('button', { name: 'Save a backup' }))
+    expect(onExport).toHaveBeenCalledTimes(1)
+    expect(onImport).not.toHaveBeenCalled()
+  })
+
+  it('starts a restore from Restore from a backup', async () => {
+    const onExport = vi.fn()
+    const onImport = vi.fn()
+    renderOptions(noReminder, { onExport, onImport })
+    await userEvent.click(screen.getByRole('button', { name: 'Restore from a backup' }))
+    expect(onImport).toHaveBeenCalledTimes(1)
+    expect(onExport).not.toHaveBeenCalled()
   })
 
   it('ends with the two credit lines', () => {

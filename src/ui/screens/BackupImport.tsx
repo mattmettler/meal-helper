@@ -8,7 +8,7 @@ import { Logo } from '../Logo'
 import { BackupCounts } from './BackupCounts'
 
 interface BackupImportProps {
-  currentSummary: BackupSummary
+  loadCurrentSummary: () => Promise<BackupSummary>
   onReplace: (file: BackupFile) => Promise<void>
   onBack: () => void
 }
@@ -16,12 +16,12 @@ interface BackupImportProps {
 type Stage =
   | { kind: 'choose' }
   | { kind: 'bad'; message: string }
-  | { kind: 'confirm'; file: BackupFile; fileName: string }
+  | { kind: 'confirm'; file: BackupFile; fileName: string; current: BackupSummary | 'loading' | 'failed' }
   | { kind: 'done'; summary: BackupSummary }
 
 const NOT_ONE_OF_MINE = "Hmm, that doesn't look like one of my backups."
 
-export function BackupImport({ currentSummary, onReplace, onBack }: BackupImportProps) {
+export function BackupImport({ loadCurrentSummary, onReplace, onBack }: BackupImportProps) {
   const [stage, setStage] = useState<Stage>({ kind: 'choose' })
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -38,7 +38,16 @@ export function BackupImport({ currentSummary, onReplace, onBack }: BackupImport
     }
     const parsed = parseBackup(text)
     if (parsed.ok) {
-      setStage({ kind: 'confirm', file: parsed.file, fileName: picked.name })
+      const confirm = { kind: 'confirm', file: parsed.file, fileName: picked.name } as const
+      setStage({ ...confirm, current: 'loading' })
+      let current: BackupSummary | 'failed'
+      try {
+        current = await loadCurrentSummary()
+      } catch {
+        current = 'failed'
+      }
+      // Ignore the result if the user has already cancelled or picked another file.
+      setStage(latest => (latest.kind === 'confirm' && latest.file === parsed.file ? { ...confirm, current } : latest))
     } else {
       setStage({ kind: 'bad', message: parsed.error === NEWER_VERSION ? parsed.error : NOT_ONE_OF_MINE })
     }
@@ -106,13 +115,19 @@ export function BackupImport({ currentSummary, onReplace, onBack }: BackupImport
           <div className="filepill">{stage.fileName}</div>
           <div className="sect">This backup has</div>
           <BackupCounts summary={summarizeBackup(stage.file)} />
-          <div className="warn">
-            <b>This replaces what's on this phone now:</b> {plural(currentSummary.customOptions, 'custom option')},{' '}
-            {plural(currentSummary.tips, 'tip')}, and {plural(currentSummary.savedMeals, 'saved meal')}. It can't be undone.
-          </div>
+          {stage.current === 'loading' && <p className="hint">Counting your data...</p>}
+          {stage.current === 'failed' && <p className="error" role="alert">Couldn't read your data. Try again?</p>}
+          {typeof stage.current === 'object' && (
+            <div className="warn">
+              <b>This replaces what's on this phone now:</b> {plural(stage.current.customOptions, 'custom option')},{' '}
+              {plural(stage.current.tips, 'tip')}, and {plural(stage.current.savedMeals, 'saved meal')}. It can't be undone.
+            </div>
+          )}
           {failed && <p className="error" role="alert">Couldn't restore that. Nothing was changed. Try again?</p>}
           <div className="footer">
-            <button className="btn danger" disabled={pending} onClick={() => replace(stage.file)}>Replace my data</button>
+            {stage.current !== 'failed' && (
+              <button className="btn danger" disabled={pending || stage.current === 'loading'} onClick={() => replace(stage.file)}>Replace my data</button>
+            )}
             <button className="btn ghost" disabled={pending} onClick={chooseAgain}>Cancel</button>
           </div>
         </>

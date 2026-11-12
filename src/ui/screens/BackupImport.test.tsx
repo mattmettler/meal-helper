@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BACKUP_APP, BACKUP_FORMAT_VERSION, serializeBackup, type BackupFile } from '../../storage/backup'
 import { BackupImport } from './BackupImport'
@@ -26,9 +26,18 @@ async function chooseFile(text: string) {
   await userEvent.upload(screen.getByLabelText('Choose a backup file'), jsonFile(text))
 }
 
-function renderImport(onReplace = vi.fn().mockResolvedValue(undefined)) {
+async function findEnabledReplace() {
+  const button = await screen.findByRole('button', { name: 'Replace my data' })
+  await waitFor(() => expect(button).toBeEnabled())
+  return button
+}
+
+function renderImport(
+  onReplace = vi.fn().mockResolvedValue(undefined),
+  loadCurrentSummary: () => Promise<typeof currentSummary> = () => Promise.resolve(currentSummary),
+) {
   const onBack = vi.fn()
-  render(<BackupImport currentSummary={currentSummary} onReplace={onReplace} onBack={onBack} />)
+  render(<BackupImport loadCurrentSummary={loadCurrentSummary} onReplace={onReplace} onBack={onBack} />)
   return { onReplace, onBack }
 }
 
@@ -40,6 +49,7 @@ describe('BackupImport', () => {
     expect(screen.getByText('Custom options').parentElement).toHaveTextContent('Custom options1')
     expect(screen.getByText('Your tips').parentElement).toHaveTextContent('Your tips2')
     expect(screen.getByText('Saved meals').parentElement).toHaveTextContent('Saved meals1')
+    await findEnabledReplace()
     expect(document.querySelector('.warn')).toHaveTextContent(
       "This replaces what's on this phone now: 4 custom options, 6 tips, and 9 saved meals. It can't be undone.",
     )
@@ -48,7 +58,7 @@ describe('BackupImport', () => {
   it('replaces the data with the parsed file and then says all restored', async () => {
     const { onReplace } = renderImport()
     await chooseFile(serializeBackup(backup))
-    await userEvent.click(await screen.findByRole('button', { name: 'Replace my data' }))
+    await userEvent.click(await findEnabledReplace())
     expect(onReplace).toHaveBeenCalledWith(backup)
     expect(await screen.findByText('All restored!')).toBeInTheDocument()
     expect(screen.getByText('1 custom option, 2 tips, and 1 saved meal are back.')).toBeInTheDocument()
@@ -57,7 +67,7 @@ describe('BackupImport', () => {
   it('goes back when Done is pressed after restoring', async () => {
     const { onBack } = renderImport()
     await chooseFile(serializeBackup(backup))
-    await userEvent.click(await screen.findByRole('button', { name: 'Replace my data' }))
+    await userEvent.click(await findEnabledReplace())
     await userEvent.click(await screen.findByRole('button', { name: 'Done' }))
     expect(onBack).toHaveBeenCalled()
   })
@@ -100,7 +110,7 @@ describe('BackupImport', () => {
     const onReplace = vi.fn(() => new Promise<void>(resolve => { finish = resolve }))
     renderImport(onReplace)
     await chooseFile(serializeBackup(backup))
-    const button = await screen.findByRole('button', { name: 'Replace my data' })
+    const button = await findEnabledReplace()
     await userEvent.click(button)
     expect(button).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
@@ -112,9 +122,40 @@ describe('BackupImport', () => {
   it('shows an alert when restoring fails and stays on the confirm screen', async () => {
     renderImport(vi.fn().mockRejectedValue(new Error('nope')))
     await chooseFile(serializeBackup(backup))
-    await userEvent.click(await screen.findByRole('button', { name: 'Replace my data' }))
+    await userEvent.click(await findEnabledReplace())
     expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't restore that. Nothing was changed. Try again?")
     expect(screen.getByRole('button', { name: 'Replace my data' })).toBeEnabled()
     expect(screen.queryByText('All restored!')).not.toBeInTheDocument()
+  })
+
+  it('does not count anything on mount or for a bad file', async () => {
+    let calls = 0
+    renderImport(undefined, () => { calls += 1; return Promise.resolve(currentSummary) })
+    expect(calls).toBe(0)
+    await chooseFile('nope')
+    await screen.findByText("Hmm, that doesn't look like one of my backups.")
+    expect(calls).toBe(0)
+  })
+
+  it('counts the current data once after a valid file and keeps Replace disabled until it loads', async () => {
+    let calls = 0
+    let finish: (value: typeof currentSummary) => void = () => {}
+    renderImport(undefined, () => { calls += 1; return new Promise(resolve => { finish = resolve }) })
+    await chooseFile(serializeBackup(backup))
+    expect(await screen.findByText('meal-guide-backup-2026-10-30.json')).toBeInTheDocument()
+    expect(calls).toBe(1)
+    expect(screen.getByRole('button', { name: 'Replace my data' })).toBeDisabled()
+    expect(document.querySelector('.warn')).not.toBeInTheDocument()
+    await act(async () => { finish(currentSummary) })
+    expect(screen.getByRole('button', { name: 'Replace my data' })).toBeEnabled()
+    expect(document.querySelector('.warn')).toHaveTextContent('4 custom options, 6 tips, and 9 saved meals')
+    expect(calls).toBe(1)
+  })
+
+  it('shows an alert and no Replace button when counting the current data fails', async () => {
+    renderImport(undefined, () => Promise.reject(new Error('nope')))
+    await chooseFile(serializeBackup(backup))
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't read your data. Try again?")
+    expect(screen.queryByRole('button', { name: 'Replace my data' })).not.toBeInTheDocument()
   })
 })

@@ -188,8 +188,9 @@ label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display
 .addrow { min-height: 44px; border: 0; background: transparent; padding: 0; font-size: 13px; font-weight: 800; color: var(--ink-soft); cursor: pointer; }
 .linkrow { display: flex; align-items: center; width: 100%; min-height: 44px; border: 0; background: transparent; padding: 0 2px; margin: 8px 0 14px; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
 .linkrow .go { margin-left: auto; color: var(--ink-soft); }
-.backup { display: block; width: 100%; background: #F3EEFA; border: 0; border-radius: var(--radius); padding: 14px 16px; text-align: left; font-size: 13px; cursor: pointer; }
-.backup b, .backup span { display: block; }
+.backup { background: #F3EEFA; border-radius: var(--radius); padding: 14px 16px; font-size: 13px; }
+.backup h2 { margin: 0; font-size: 13px; }
+.backup p { margin: 0 0 10px; }
 .legal { margin-top: 18px; text-align: center; font-size: 12px; color: var(--ink-soft); }
 .legal p { margin: 0 0 4px; }
 
