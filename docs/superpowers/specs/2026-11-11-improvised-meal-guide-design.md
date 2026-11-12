@@ -125,6 +125,44 @@ Bottom tab bar: Build, Saved, Options.
 - **Saved**: list ordered favorites first then newest. Heart toggle per row. Tapping a row opens a read-only view of the snapshot with a Delete button behind a confirm.
 - **Options**: options grouped by step. Add option (then the compatibility checklist), add tip to any option, delete (hide) any option, "Hidden options" list to restore, Export, Import, and a "last backed up N days ago" note.
 
+### 5.1 Visual design
+
+Mood: calm, gentle, cute, with muted but playful colors, in the spirit of apps built to be friendly to people with ADHD. Reference: `docs/mockups/mockup-v1.html` (approved direction, six screens).
+
+**Colors** (CSS custom properties on `:root`):
+
+| Token | Value | Use |
+| :--- | :--- | :--- |
+| `--bg` | `#FBF6EE` | App background (warm cream) |
+| `--card` | `#FFFFFF` | Cards, chips, inputs |
+| `--ink` | `#4A4458` | Primary text |
+| `--ink-soft` | `#8A8497` | Secondary text |
+| `--line` | `#EDE4D6` | Borders, unfilled progress |
+
+Each step owns one soft color (fill) and a deeper shade (borders, tip rules). The color appears in the step header, the progress bar, selected chips, result cards, and the Options screen:
+
+| Step | Fill | Deeper shade |
+| :--- | :--- | :--- |
+| Starch/Base | `#F6E3A1` | `#E9CB6B` |
+| Greens | `#BCD7B1` | `#8FBC82` |
+| Protein | `#F4BFA9` | `#E89A7B` |
+| Filler Veggies | `#B5D5E3` | `#86B9D0` |
+| Sauces | `#D3C3E8` | `#B09BD3` |
+| Garnish/Texture | `#F2C4D3` | `#E29AB3` |
+
+**Shape and type:**
+
+- Pill-shaped chips and buttons, 20px card radius, soft low-contrast shadows, no hard edges.
+- Minimum tap target 44px high.
+- Rounded system font stack (`ui-rounded`, `SF Pro Rounded`, `Nunito`, `Segoe UI`, `system-ui`). No font files or remote fonts, per the offline requirement.
+- Selected chips fill with the step color, show a check mark, and darken their border.
+
+**Brand:** the kestrel icon sits in each screen header. A larger version appears on the "too thin" message screen. Source art is in `assets/icon/`. Generated app icons need a solid background color (iOS fills transparent areas with black) and the artwork inside the central 80% of the canvas.
+
+**Copy:** the thing the user makes is always called a "meal", never a "bowl" or "recipe".
+
+**Mockup placeholders:** the tab bar icons and favorite hearts are emoji in the mockup. Emoji render differently on iOS and Android, so confirm they look acceptable on real devices or replace them with inline SVG. Option names, tips, and meal names in the mockup are invented and are not seed content.
+
 ## 6. Offline, install, and storage resilience
 
 - `vite-plugin-pwa` generates the manifest and a service worker that precaches all built assets (HTML, JS, CSS, icons, content). Cache-first. No runtime CDN, font, or other remote requests.
@@ -155,3 +193,6 @@ The PRD section 9 enhancements stay out: editing option names, reordering, optio
 
 - Verify `navigator.storage.persist()` and home-screen eviction behavior on a real iOS device.
 - Author supplies final content lists after the app works.
+- Mockups not yet drawn: the add-option compatibility checklist, the add-tip screen, and the saved-meal detail view.
+- Dark mode is undecided. The first release ships light only unless the author asks for it.
+- Choose the solid background color for the generated app icons.
