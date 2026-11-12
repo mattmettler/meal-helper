@@ -74,6 +74,5 @@ Delete the example block below when you're done.
 
 ## Notes for Claude
 
-- Option ids are made from the step and the name, for example `starch.brown-rice`. Once friends have the app, an option's id must never change. Renaming the displayed name later is always safe.
-- When renaming an existing option, keep its old id by setting an explicit `id` on its entry in `seed.ts`.
+- Option ids default to the step plus the kebab-cased name, for example `starch.brown-rice`. Once friends have the app, an option's id must never change. Renaming the displayed name is safe only if the entry keeps its old id by setting an explicit `id` on its entry in `seed.ts`.
 - When this content is converted, run the seed integrity tests and report anything they flag.

@@ -25,6 +25,11 @@ describe('buildSeed', () => {
     expect(() => buildSeed(entries)).toThrow(/"greens\.bok-choy"/)
   })
 
+  it('throws naming the id when an explicit id collides with another option id', () => {
+    const entries = table({ greens: [{ name: 'Collard', id: 'greens.kale', tips: ['a'] }, { name: 'Kale', tips: ['b'] }] })
+    expect(() => buildSeed(entries)).toThrow(/"greens\.kale"/)
+  })
+
   it('uses an explicit id for the option and its tips, and keeps it when the name changes', () => {
     const build = (name: string) =>
       buildSeed(table({ greens: [{ name, id: 'greens.kale', tips: ['one', 'two'] }] }))
