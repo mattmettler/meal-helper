@@ -170,7 +170,7 @@ Each step owns one soft color (fill) and a deeper shade (borders, tip rules). Th
 - `vite-plugin-pwa` generates the manifest and a service worker that precaches all built assets (HTML, JS, CSS, icons, content). Cache-first. No runtime CDN, font, or other remote requests.
 - Hosted on GitHub Pages. The Vite `base` path must match the repository name.
 - Updates reach a phone when the app is opened online and the new service worker activates.
-- On first launch call `navigator.storage.persist()` and record the result. iOS behavior for home-screen apps must be verified on a real device before relying on it.
+- On startup call `navigator.storage.persist()` and log the result to the console (it is not stored or shown). iOS behavior for home-screen apps must be verified on a real device before relying on it.
 - Export writes one JSON file with the five user-data tables and a format version. Import validates version and shape before wiping anything, then replaces local user data after a confirm. The file is saved with a plain browser download. Add the Web Share sheet only if downloading doesn't work in an installed iOS app.
 - The app shows a gentle reminder when no backup exists and a meal is saved, or when the last backup is over 30 days old.
 - Residual risk: if iOS evicts the service worker cache itself, the app cannot reload offline until reinstalled from the fallback host. Backups protect data, not the app.
@@ -185,7 +185,7 @@ Test-first throughout.
 
 - **Logic (Vitest)**: filtering with pairs and hidden options, every validation case in 3.1, name generation (skipped steps, join rules, the "& more" cap, no-starch case), tip lookup, merge of built-in and user data.
 - **Storage (Vitest + fake-indexeddb, no mocks)**: persistence of each table, deleting an option does not change saved meals, favorites persist, export/import round trip, import rejects a malformed or wrong-version file without touching existing data.
-- **Manual checklist**: install on real iOS and Android devices, launch from the home-screen icon, airplane-mode use of every feature, data persists after restart, `storage.persist()` result on iOS.
+- **Manual checklist**: install on real iOS and Android devices, launch from the home-screen icon, airplane-mode use of every feature, data persists after restart, `storage.persist()` result on iOS (from the console log).
 
 ## 9. Out of scope for the first release
 

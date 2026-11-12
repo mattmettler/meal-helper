@@ -41,7 +41,7 @@ Failure modes the spec implies that its own tests would not catch, most likely f
 src/logic/        types.ts steps.ts copy.ts validate.ts catalog.ts filtering.ts
                   inputRules.ts name.ts tips.ts meal.ts backupReminder.ts
 src/content/      seed.ts                       (built-in options, pairs, tips)
-src/storage/      db.ts userData.ts savedMeals.ts backup.ts settings.ts instance.ts
+src/storage/      db.ts userData.ts savedMeals.ts backup.ts settings.ts persistence.ts instance.ts
 src/ui/           App.tsx TabBar.tsx theme.css stepTheme.ts useCatalog.ts readFileText.ts downloadFile.ts
 src/ui/screens/   Build.tsx Result.tsx Saved.tsx SavedDetail.tsx Options.tsx OptionAdd.tsx
                   Compatibility.tsx OptionDetail.tsx HiddenOptions.tsx BackupExport.tsx
@@ -247,21 +247,22 @@ export interface UserData {
 ### Task 8: Saved meals, settings, and backup
 
 **Files:**
-- Create: `src/storage/savedMeals.ts`, `src/storage/settings.ts`, `src/storage/backup.ts`
-- Test: `src/storage/savedMeals.test.ts`, `src/storage/settings.test.ts`, `src/storage/backup.test.ts`
+- Create: `src/storage/savedMeals.ts`, `src/storage/settings.ts`, `src/storage/persistence.ts`, `src/storage/backup.ts`
+- Test: `src/storage/savedMeals.test.ts`, `src/storage/settings.test.ts`, `src/storage/persistence.test.ts`, `src/storage/backup.test.ts`
 
 **Interfaces:**
 - Consumes: `MealGuideDb`, `Meal`, `SavedMeal`, `UserData`.
 - Produces:
   - `saveMeal(db, meal: Meal, now = Date.now()): Promise<string>` (returns UUID; `isFavorite: false`); `listSavedMeals(db): Promise<SavedMeal[]>` (favorites first, then newest first); `setFavorite(db, id: string, isFavorite: boolean)`; `deleteSavedMeal(db, id: string)`.
-  - `getLastBackupAt(db): Promise<number | null>`; `recordBackupExport(db, now = Date.now()): Promise<void>`; `requestPersistence(db, storage: Pick<StorageManager, 'persist'> | undefined = navigator.storage): Promise<'granted' | 'denied' | 'unsupported'>` (records the result under settings key `persistGranted`; `unsupported` when `storage?.persist` is missing).
+  - `getLastBackupAt(db): Promise<number | null>`; `recordBackupExport(db, now = Date.now()): Promise<void>`.
+  - `requestPersistence(storage: Pick<StorageManager, 'persist'> | undefined = navigator.storage): Promise<boolean>` in `persistence.ts` — resolves whether persistent storage was granted, `false` when `storage?.persist` is missing. It stores nothing.
   - `BACKUP_APP = 'improvised-meal-guide'`, `BACKUP_FORMAT_VERSION = 1`.
   - `interface BackupFile { app: string; formatVersion: number; exportedAt: number; data: { customOptions: CustomOptionRow[]; hiddenBuiltIns: Array<{ optionId: string }>; userPairs: UserPairRow[]; userTips: UserTipRow[]; savedMeals: SavedMeal[] } }`
   - `exportBackup(db, now = Date.now()): Promise<BackupFile>` (never includes `settings` or built-in content); `serializeBackup(file: BackupFile): string`; `parseBackup(text: string): { ok: true; file: BackupFile } | { ok: false; error: string }`; `summarizeBackup(file: BackupFile): { customOptions: number; tips: number; clashes: number; hiddenOptions: number; savedMeals: number }`; `importBackup(db, file: BackupFile): Promise<void>` (one transaction that clears the five tables then inserts).
 
 - [ ] **Step 1: Write failing tests.**
   - Saved meals: saving stores the snapshot text; hiding a custom option or deleting a user tip afterwards leaves the saved meal unchanged; list order is favorites first then newest (two favorites and two non-favorites with explicit `now`); favorite persists across close/reopen; delete removes only that meal.
-  - Settings: `getLastBackupAt` is `null` initially and returns the recorded time; `requestPersistence` returns `granted`/`denied` from a stub object with a `persist()` method, records it, and returns `unsupported` for `undefined` and for `{}`.
+  - Settings: `getLastBackupAt` is `null` initially and returns the time recorded by `recordBackupExport`. Persistence: `requestPersistence` resolves `true` or `false` as a plain stub object with a `persist()` method answers, and resolves `false` (without throwing) for `undefined` and for `{}`.
   - Backup: export then import into a fresh db round-trips every table (user tips keep their ids and order); export has no `settings` content; import replaces data (rows only in the old db are gone); `parseBackup` returns `ok: false` with the message `That doesn't look like a backup from this app` for invalid JSON, truncated JSON, `null`, an array, the wrong `app`, a missing table, a non-array table, and a row with a wrong field type (`savedMeals[0].groups` not an array); for `formatVersion: 2` it returns `ok: false` with `This backup is from a newer version of the app`; duplicate ids within one table return `ok: false`; `importBackup` of a file with duplicate ids (bypassing `parseBackup`) rejects and leaves the existing data intact; `summarizeBackup` counts match.
 - [ ] **Step 2: Run the three files.** Expected: FAIL.
 - [ ] **Step 3: Implement.** `parseBackup` validates by hand (no schema library) and never touches the database.
@@ -414,7 +415,7 @@ export interface UserData {
 
 **Files:**
 - Create: `src/ui/screens/BackupExport.tsx`, `src/ui/screens/BackupImport.tsx`, `src/ui/readFileText.ts`, `src/ui/downloadFile.ts`
-- Modify: `src/ui/App.tsx`, `src/main.tsx` (call `requestPersistence(db)` once at startup, ignoring the result in the UI)
+- Modify: `src/ui/App.tsx`, `src/main.tsx` (call `requestPersistence()` once at startup and log the answer with `console.info`; the UI never reads it)
 - Test: `src/ui/screens/BackupExport.test.tsx`, `src/ui/screens/BackupImport.test.tsx`
 
 **Interfaces:**
@@ -458,7 +459,7 @@ export interface UserData {
 **Files:**
 - Create: `.github/workflows/deploy.yml`, `docs/device-checklist.md`
 
-- [ ] **Step 1: Write `docs/device-checklist.md`** from spec section 8 and the open items: install on a real iOS device and a real Android device; launch from the home-screen icon in standalone mode; airplane-mode use of every feature (build, save, favorite, add option, add tip, hide, export, import); data persists after fully closing and reopening; the `storage.persist()` result on iOS; export downloads a file that can be found and re-imported on both platforms (if an installed iOS app blocks the download, add `navigator.share` with files in `downloadFile` and record the decision in the spec); emoji tab icons and hearts look acceptable on both platforms; icon looks right on both home screens; the app works when the host is unreachable after install.
+- [ ] **Step 1: Write `docs/device-checklist.md`** from spec section 8 and the open items: install on a real iOS device and a real Android device; launch from the home-screen icon in standalone mode; airplane-mode use of every feature (build, save, favorite, add option, add tip, hide, export, import); data persists after fully closing and reopening; the `storage.persist()` result on iOS (read from the console log); export downloads a file that can be found and re-imported on both platforms (if an installed iOS app blocks the download, add `navigator.share` with files in `downloadFile` and record the decision in the spec); emoji tab icons and hearts look acceptable on both platforms; icon looks right on both home screens; the app works when the host is unreachable after install.
 - [ ] **Step 2: Write `.github/workflows/deploy.yml`** that on push to `main` installs dependencies, runs `npm test` and `npm run verify:build`, and publishes `dist/` to GitHub Pages using the official Pages actions. Check each action's current major version before pinning.
 - [ ] **Step 3: Stop and ask Matt before pushing the workflow or enabling Pages.** Publishing makes the app reachable on the internet, and Pages on a private repository may need a paid plan. Matt sets Pages "Source" to "GitHub Actions" in the repository settings.
 - [ ] **Step 4: After Matt approves and enables Pages, push, and confirm** the workflow run is green and the site loads at its Pages URL with the service worker registering.
