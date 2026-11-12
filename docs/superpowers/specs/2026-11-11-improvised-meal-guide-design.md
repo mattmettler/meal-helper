@@ -116,7 +116,7 @@ Saved meals store plain text so deleting or changing options never changes them.
 
 ### 4.2 Custom option compatibility
 
-When a user adds an option, a checklist follows: every other option grouped by step, with a checkbox for each one it does NOT go well with. Checked items become `userPairs`. The user can also attach a tip to any option (built-in or custom) from the Options screen. Built-in tips and notes are fixed. Tips the user adds appear after any built-in tips for that option, and the user can delete the tips they added. A user who dislikes a built-in tip hides the option instead.
+When a user adds an option, a checklist follows: every other option grouped by step, with a checkbox for each one it does NOT go well with. Checked items become `userPairs`. The user can reopen the same checklist later from the option's edit screen to change the clashes on their own custom options. Built-in options have no clash editor, though they can still appear in the checklist as the target of a custom option's clash. The user can also attach a tip to any option (built-in or custom) from the Options screen. Built-in tips and notes are fixed. Tips the user adds appear after any built-in tips for that option, and the user can delete the tips they added. A user who dislikes a built-in tip hides the option instead.
 
 ## 5. Screens
 
@@ -125,7 +125,7 @@ Bottom tab bar: Build, Saved, Options.
 - **Build**: one step at a time, progress indicator ("Step 3 of 6"), tappable option cards in a two-column grid (bold name, with the option's optional note in smaller text underneath), Back keeps picks, Next doubles as Skip when nothing is picked. After step 6, validate. Failure shows the message and resets. Success goes to Result. Build state is in memory only.
 - **Result**: name, picks grouped by step with tips inline under each option, editable name field (pre-filled), Save, Discard.
 - **Saved**: list ordered favorites first then newest. Heart toggle per row. Tapping a row opens a read-only view of the snapshot with a Delete button behind a confirm.
-- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add a tip to any option and delete tips you added, edit the note on your own options, delete (hide) any option, "Hidden options" list to restore, Export, Import, and a "last backed up N days ago" note.
+- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add a tip to any option and delete tips you added, edit the note and clashes on your own options, delete (hide) any option, "Hidden options" list to restore, Export, Import, and a "last backed up N days ago" note.
 
 ### 5.1 Visual design
 
