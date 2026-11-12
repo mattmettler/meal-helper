@@ -30,6 +30,24 @@ describe('Saved', () => {
     expect(logo).toHaveAttribute('alt', '')
   })
 
+  it('renders a meal with same-named options and identical tips without key warnings', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const twins = meal({
+      groups: [{
+        stepName: 'Greens',
+        items: [
+          { optionName: 'Kale', tips: ['Massage it.', 'Massage it.'] },
+          { optionName: 'Kale', tips: [] },
+        ],
+      }],
+    })
+    render(<SavedDetail meal={twins} onDelete={() => {}} onBack={() => {}} />)
+    expect(screen.getAllByText('Kale')).toHaveLength(2)
+    expect(screen.getAllByText('Massage it.')).toHaveLength(2)
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
+  })
+
   it('shows the saved date on each row', () => {
     render(<Saved meals={[other]} onToggleFavorite={() => {}} onOpen={() => {}} reminder={noReminder} />)
     const expected = new Date(2026, 10, 8).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })

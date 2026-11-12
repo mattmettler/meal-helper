@@ -2,6 +2,7 @@ import { useState, type ChangeEvent } from 'react'
 import {
   NEWER_VERSION, parseBackup, summarizeBackup, type BackupFile, type BackupSummary,
 } from '../../storage/backup'
+import { plural } from '../plural'
 import { readFileText } from '../readFileText'
 import { Logo } from '../Logo'
 import { BackupCounts } from './BackupCounts'
@@ -81,7 +82,7 @@ export function BackupImport({ currentSummary, onReplace, onBack }: BackupImport
         <div className="center">
           <Logo large />
           <h2>All restored!</h2>
-          <p>{customOptions} custom options, {tips} tips, and {savedMeals} saved meals are back.</p>
+          <p>{plural(customOptions, 'custom option')}, {plural(tips, 'tip')}, and {plural(savedMeals, 'saved meal')} are back.</p>
           <button className="btn" onClick={onBack}>Done</button>
         </div>
       </div>
@@ -106,8 +107,8 @@ export function BackupImport({ currentSummary, onReplace, onBack }: BackupImport
           <div className="sect">This backup has</div>
           <BackupCounts summary={summarizeBackup(stage.file)} />
           <div className="warn">
-            <b>This replaces what's on this phone now:</b> {currentSummary.customOptions} custom options,{' '}
-            {currentSummary.tips} tips, and {currentSummary.savedMeals} saved meals. It can't be undone.
+            <b>This replaces what's on this phone now:</b> {plural(currentSummary.customOptions, 'custom option')},{' '}
+            {plural(currentSummary.tips, 'tip')}, and {plural(currentSummary.savedMeals, 'saved meal')}. It can't be undone.
           </div>
           {failed && <p className="error" role="alert">Couldn't restore that. Nothing was changed. Try again?</p>}
           <div className="footer">

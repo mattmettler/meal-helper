@@ -10,10 +10,10 @@ export function MealGroups({ groups }: { groups: Meal['groups'] }) {
         return (
           <div key={group.stepName} className={`card ${step ? stepClass(step.id) : ''}`}>
             <span className="group-label">{group.stepName}</span>
-            {group.items.map(item => (
-              <div key={item.optionName}>
+            {group.items.map((item, itemIndex) => (
+              <div key={itemIndex}>
                 <div className="pick">{item.optionName}</div>
-                {item.tips.map(tip => <p key={tip} className="tip">{tip}</p>)}
+                {item.tips.map((tip, tipIndex) => <p key={tipIndex} className="tip">{tip}</p>)}
               </div>
             ))}
           </div>

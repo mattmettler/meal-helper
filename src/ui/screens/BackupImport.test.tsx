@@ -51,7 +51,7 @@ describe('BackupImport', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Replace my data' }))
     expect(onReplace).toHaveBeenCalledWith(backup)
     expect(await screen.findByText('All restored!')).toBeInTheDocument()
-    expect(screen.getByText('1 custom options, 2 tips, and 1 saved meals are back.')).toBeInTheDocument()
+    expect(screen.getByText('1 custom option, 2 tips, and 1 saved meal are back.')).toBeInTheDocument()
   })
 
   it('goes back when Done is pressed after restoring', async () => {
