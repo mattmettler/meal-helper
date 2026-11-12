@@ -1,0 +1,79 @@
+:root {
+  --bg: #FBF6EE;
+  --card: #FFFFFF;
+  --ink: #4A4458;
+  --ink-soft: #8A8497;
+  --line: #EDE4D6;
+
+  --starch: #F6E3A1;   --starch-d: #E9CB6B;
+  --greens: #BCD7B1;   --greens-d: #8FBC82;
+  --protein: #F4BFA9;  --protein-d: #E89A7B;
+  --veggies: #B5D5E3;  --veggies-d: #86B9D0;
+  --sauces: #D3C3E8;   --sauces-d: #B09BD3;
+  --garnish: #F2C4D3;  --garnish-d: #E29AB3;
+
+  --radius: 20px;
+  --shadow: 0 4px 14px rgba(74, 68, 88, 0.10);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+[hidden] { display: none !important; }
+
+button { font: inherit; color: inherit; }
+
+.step-starch  { --c: var(--starch);  --cd: var(--starch-d); }
+.step-greens  { --c: var(--greens);  --cd: var(--greens-d); }
+.step-protein { --c: var(--protein); --cd: var(--protein-d); }
+.step-veggies { --c: var(--veggies); --cd: var(--veggies-d); }
+.step-sauces  { --c: var(--sauces);  --cd: var(--sauces-d); }
+.step-garnish { --c: var(--garnish); --cd: var(--garnish-d); }
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.loading { text-align: center; color: var(--ink-soft); padding-top: 60px; }
+
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  padding: calc(18px + env(safe-area-inset-top)) 18px 12px;
+}
+
+.screen h1 { font-size: 22px; margin: 0 0 14px; }
+
+.tabs {
+  display: flex;
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  padding: 8px 6px calc(12px + env(safe-area-inset-bottom));
+}
+
+.tab {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.tab span { display: block; font-size: 20px; }
+.tab.on { color: var(--ink); }
