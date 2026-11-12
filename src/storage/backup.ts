@@ -20,7 +20,7 @@ export interface BackupFile {
 export type ParsedBackup = { ok: true; file: BackupFile } | { ok: false; error: string }
 
 const NOT_A_BACKUP = "That doesn't look like a backup from this app"
-const NEWER_VERSION = 'This backup is from a newer version of the app'
+export const NEWER_VERSION = 'This backup is from a newer version of the app'
 const STEP_IDS: StepId[] = ['starch', 'greens', 'protein', 'veggies', 'sauces', 'garnish']
 
 export async function exportBackup(db: MealGuideDb, now = Date.now()): Promise<BackupFile> {
@@ -114,6 +114,8 @@ export function summarizeBackup(file: BackupFile) {
     savedMeals: file.data.savedMeals.length,
   }
 }
+
+export type BackupSummary = ReturnType<typeof summarizeBackup>
 
 export async function importBackup(db: MealGuideDb, file: BackupFile): Promise<void> {
   const tables = [db.customOptions, db.hiddenBuiltIns, db.userPairs, db.userTips, db.savedMeals]

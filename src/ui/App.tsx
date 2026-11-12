@@ -1,13 +1,19 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { backupReminder } from '../logic/backupReminder'
+import { exportBackup, importBackup, serializeBackup, summarizeBackup, type BackupFile } from '../storage/backup'
 import { db } from '../storage/instance'
 import { deleteSavedMeal, listSavedMeals, saveMeal, setFavorite } from '../storage/savedMeals'
-import { getLastBackupAt } from '../storage/settings'
+import { getLastBackupAt, recordBackupExport } from '../storage/settings'
 import {
   addCustomOptionWithClashes, addUserTip, deleteCustomOption, deleteUserTip, hideBuiltInOption,
   restoreBuiltInOption, setClashes, updateCustomOptionNote,
 } from '../storage/userData'
+import { backupFileName } from './backupFileName'
+import { downloadFile } from './downloadFile'
+import { BackupExport } from './screens/BackupExport'
+import { BackupHome } from './screens/BackupHome'
+import { BackupImport } from './screens/BackupImport'
 import { Build } from './screens/Build'
 import type { ReminderState } from './screens/BackupReminder'
 import { Compatibility } from './screens/Compatibility'
@@ -28,11 +34,15 @@ type OptionsView =
   | { screen: 'detail'; optionId: string }
   | { screen: 'editClashes'; optionId: string }
   | { screen: 'hidden' }
+  | { screen: 'backup' }
+  | { screen: 'backupExport'; fileName: string }
+  | { screen: 'backupImport' }
 
 export function App() {
   const [tab, setTab] = useState<Tab>('build')
   const [openMealId, setOpenMealId] = useState<string | null>(null)
   const [optionsView, setOptionsView] = useState<OptionsView>({ screen: 'home' })
+  const [buildKey, setBuildKey] = useState(0)
   const catalog = useCatalog()
   const meals = useLiveQuery(() => listSavedMeals(db), [])
   const reminder = useLiveQuery(async (): Promise<ReminderState> => {
@@ -41,10 +51,21 @@ export function App() {
     return { show: backupReminder({ lastBackupAt, now: Date.now(), savedMealCount }), lastBackupAt }
   }, [])
 
-  if (!catalog || !meals || !reminder) return <p className="loading">Loading...</p>
+  const backupSummary = useLiveQuery(async () => summarizeBackup(await exportBackup(db)), [])
+
+  if (!catalog || !meals || !reminder || !backupSummary) return <p className="loading">Loading...</p>
 
   const openMeal = meals.find(m => m.id === openMealId)
   const backToOptions = () => setOptionsView({ screen: 'home' })
+  const saveBackupFile = async (fileName: string) => {
+    const text = serializeBackup(await exportBackup(db))
+    downloadFile(new File([text], fileName, { type: 'application/json' }))
+    await recordBackupExport(db)
+  }
+  const replaceAllData = async (file: BackupFile) => {
+    await importBackup(db, file)
+    setBuildKey(key => key + 1)
+  }
   const clashEditOption = optionsView.screen === 'editClashes'
     ? catalog.options.find(o => o.id === optionsView.optionId)
     : undefined
@@ -53,7 +74,7 @@ export function App() {
     <div className="app">
       <main className="screen">
         <section hidden={tab !== 'build'}>
-          <Build catalog={catalog} onSave={async meal => { await saveMeal(db, meal); setTab('saved') }} />
+          <Build key={buildKey} catalog={catalog} onSave={async meal => { await saveMeal(db, meal); setTab('saved') }} />
         </section>
         <section hidden={tab !== 'saved'}>
           {openMeal ? (
@@ -131,13 +152,36 @@ export function App() {
               onBack={backToOptions}
             />
           )}
+          {optionsView.screen === 'backup' && (
+            <BackupHome
+              onExport={() => setOptionsView({ screen: 'backupExport', fileName: backupFileName(new Date()) })}
+              onImport={() => setOptionsView({ screen: 'backupImport' })}
+              onBack={backToOptions}
+            />
+          )}
+          {optionsView.screen === 'backupExport' && (
+            <BackupExport
+              summary={backupSummary}
+              lastBackupAt={reminder.lastBackupAt}
+              fileName={optionsView.fileName}
+              onSave={() => saveBackupFile(optionsView.fileName)}
+              onBack={() => setOptionsView({ screen: 'backup' })}
+            />
+          )}
+          {optionsView.screen === 'backupImport' && (
+            <BackupImport
+              currentSummary={backupSummary}
+              onReplace={replaceAllData}
+              onBack={() => setOptionsView({ screen: 'backup' })}
+            />
+          )}
           {optionsView.screen === 'home' && (
             <Options
               catalog={catalog}
               onOpenOption={optionId => setOptionsView({ screen: 'detail', optionId })}
               onAdd={stepId => setOptionsView({ screen: 'add', stepId })}
               onOpenHidden={() => setOptionsView({ screen: 'hidden' })}
-              onOpenBackup={() => {}}
+              onOpenBackup={() => setOptionsView({ screen: 'backup' })}
               reminder={reminder}
             />
           )}

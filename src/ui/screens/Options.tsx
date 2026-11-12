@@ -1,5 +1,6 @@
 import { STEPS } from '../../logic/steps'
 import type { Catalog, StepId } from '../../logic/types'
+import { backupAge } from '../backupAge'
 import { stepClass } from '../stepTheme'
 import { BackupReminder, type ReminderState } from './BackupReminder'
 
@@ -10,15 +11,6 @@ interface OptionsProps {
   onOpenHidden: () => void
   onOpenBackup: () => void
   reminder: ReminderState
-}
-
-const DAY_MS = 24 * 60 * 60 * 1000
-
-function backupAge(lastBackupAt: number | null): string {
-  if (lastBackupAt === null) return 'Never backed up'
-  const days = Math.floor((Date.now() - lastBackupAt) / DAY_MS)
-  if (days <= 0) return 'Last backed up today'
-  return `Last backed up ${days} ${days === 1 ? 'day' : 'days'} ago`
 }
 
 export function Options({ catalog, onOpenOption, onAdd, onOpenHidden, onOpenBackup, reminder }: OptionsProps) {

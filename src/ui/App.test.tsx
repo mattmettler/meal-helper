@@ -1,8 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { exportBackup, serializeBackup } from '../storage/backup'
 import { db } from '../storage/instance'
+import { getLastBackupAt } from '../storage/settings'
 import { addCustomOption, addUserTip, deleteCustomOption, setClashes } from '../storage/userData'
 import { App } from './App'
+import { downloadFile } from './downloadFile'
+
+vi.mock('./downloadFile', () => ({ downloadFile: vi.fn() }))
 
 describe('App', () => {
   it('shows the three tabs', async () => {
@@ -88,5 +93,61 @@ describe('App', () => {
     } finally {
       await deleteCustomOption(db, id)
     }
+  })
+
+  it('saves a backup file and records the export', async () => {
+    const user = userEvent.setup()
+    vi.mocked(downloadFile).mockClear()
+    try {
+      render(<App />)
+      await user.click(await screen.findByRole('button', { name: /Options/ }))
+      await user.click(screen.getByRole('button', { name: /^Backup/ }))
+      await user.click(screen.getByRole('button', { name: 'Save a backup' }))
+      await user.click(screen.getByRole('button', { name: 'Save backup file' }))
+      await waitFor(() => expect(screen.getByText('Last backed up today')).toBeVisible())
+      expect(downloadFile).toHaveBeenCalledTimes(1)
+      expect(vi.mocked(downloadFile).mock.calls[0][0].name).toMatch(/^meal-guide-backup-\d{4}-\d{2}-\d{2}\.json$/)
+      expect(await getLastBackupAt(db)).not.toBeNull()
+    } finally {
+      await db.settings.clear()
+    }
+  })
+
+  it('does not record the export when the download fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(downloadFile).mockImplementationOnce(() => { throw new Error('blocked') })
+    try {
+      render(<App />)
+      await user.click(await screen.findByRole('button', { name: /Options/ }))
+      await user.click(screen.getByRole('button', { name: /^Backup/ }))
+      await user.click(screen.getByRole('button', { name: 'Save a backup' }))
+      await user.click(screen.getByRole('button', { name: 'Save backup file' }))
+      expect(await screen.findByRole('alert')).toBeVisible()
+      expect(await getLastBackupAt(db)).toBeNull()
+    } finally {
+      await db.settings.clear()
+    }
+  })
+
+  it('restores a backup and starts the meal build over', async () => {
+    const user = userEvent.setup()
+    const backupText = serializeBackup(await exportBackup(db))
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Build a meal' })
+    await user.click(screen.getAllByRole('button', { pressed: false }).find(b => b.classList.contains('chip'))!)
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByText('Step 2 of 6')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: /Options/ }))
+    await user.click(screen.getByRole('button', { name: /^Backup/ }))
+    await user.click(screen.getByRole('button', { name: 'Restore from a backup' }))
+    await user.upload(
+      screen.getByLabelText('Choose a backup file'),
+      new File([backupText], 'meal-guide-backup-2026-11-11.json', { type: 'application/json' }),
+    )
+    await user.click(await screen.findByRole('button', { name: 'Replace my data' }))
+    await user.click(await screen.findByRole('button', { name: 'Done' }))
+    await user.click(screen.getByRole('button', { name: /Build/ }))
+    expect(screen.getByText('Step 1 of 6')).toBeVisible()
+    expect(document.querySelectorAll('.chip[aria-pressed="true"]')).toHaveLength(0)
   })
 })

@@ -219,3 +219,13 @@ label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display
 textarea.field { min-height: 76px; resize: vertical; }
 .restore { margin-left: auto; min-height: 44px; border: 0; border-radius: 99px; padding: 9px 16px; font-weight: 800; font-size: 13px; background: var(--c); cursor: pointer; }
 .restore:disabled, .btn:disabled { opacity: .6; cursor: default; }
+
+.stat { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.stat:last-child { border-bottom: 0; }
+.stat b { font-weight: 800; }
+.filepill { background: var(--card); border-radius: 14px; padding: 12px 14px; font-weight: 700; font-size: 13px; word-break: break-all; box-shadow: var(--shadow); margin-bottom: 12px; }
+.warn { background: #FBE3D8; border: 2px solid var(--protein-d); border-radius: var(--radius); padding: 14px 16px; margin: 14px 0; font-size: 14px; }
+.center img { display: block; width: 120px; height: 120px; margin: 0 auto; border-radius: 28px; background: var(--card); box-shadow: var(--shadow); padding: 8px; }
+.center p { color: var(--ink-soft); font-size: 14px; margin: 0 20px 24px; }
+.btn + .btn { margin-top: 8px; }
+.btn.danger { background: var(--protein); }

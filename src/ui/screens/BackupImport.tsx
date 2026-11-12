@@ -1,0 +1,120 @@
+import { useState, type ChangeEvent } from 'react'
+import {
+  NEWER_VERSION, parseBackup, summarizeBackup, type BackupFile, type BackupSummary,
+} from '../../storage/backup'
+import iconUrl from '../../../assets/icon/icon-1024.png'
+import { readFileText } from '../readFileText'
+import { BackupCounts } from './BackupCounts'
+
+interface BackupImportProps {
+  currentSummary: BackupSummary
+  onReplace: (file: BackupFile) => Promise<void>
+  onBack: () => void
+}
+
+type Stage =
+  | { kind: 'choose' }
+  | { kind: 'bad'; message: string }
+  | { kind: 'confirm'; file: BackupFile; fileName: string }
+  | { kind: 'done'; summary: BackupSummary }
+
+const NOT_ONE_OF_MINE = "Hmm, that doesn't look like one of my backups."
+
+export function BackupImport({ currentSummary, onReplace, onBack }: BackupImportProps) {
+  const [stage, setStage] = useState<Stage>({ kind: 'choose' })
+  const [pending, setPending] = useState(false)
+  const [failed, setFailed] = useState(false)
+
+  async function choose(event: ChangeEvent<HTMLInputElement>) {
+    const picked = event.target.files?.[0]
+    if (!picked) return
+    let text: string
+    try {
+      text = await readFileText(picked)
+    } catch {
+      setStage({ kind: 'bad', message: NOT_ONE_OF_MINE })
+      return
+    }
+    const parsed = parseBackup(text)
+    if (parsed.ok) {
+      setStage({ kind: 'confirm', file: parsed.file, fileName: picked.name })
+    } else {
+      setStage({ kind: 'bad', message: parsed.error === NEWER_VERSION ? parsed.error : NOT_ONE_OF_MINE })
+    }
+  }
+
+  async function replace(file: BackupFile) {
+    setPending(true)
+    setFailed(false)
+    try {
+      await onReplace(file)
+      setStage({ kind: 'done', summary: summarizeBackup(file) })
+    } catch {
+      setFailed(true)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  function chooseAgain() {
+    setFailed(false)
+    setStage({ kind: 'choose' })
+  }
+
+  if (stage.kind === 'bad') {
+    return (
+      <div className="step-protein">
+        <div className="center">
+          <img src={iconUrl} alt="" />
+          <h2>{stage.message}</h2>
+          <p>Nothing was changed. Try picking a different file.</p>
+          <button className="btn" onClick={chooseAgain}>Choose another file</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (stage.kind === 'done') {
+    const { customOptions, tips, savedMeals } = stage.summary
+    return (
+      <div className="step-greens">
+        <div className="center">
+          <img src={iconUrl} alt="" />
+          <h2>All restored!</h2>
+          <p>{customOptions} custom options, {tips} tips, and {savedMeals} saved meals are back.</p>
+          <button className="btn" onClick={onBack}>Done</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="step-protein">
+      <div className="top">
+        <h1>Restore from backup</h1>
+        <button className="back" onClick={onBack}>&lsaquo; Options</button>
+      </div>
+      {stage.kind === 'choose' ? (
+        <>
+          <label className="small" htmlFor="backup-file">Choose a backup file</label>
+          <input id="backup-file" className="field" type="file" accept="application/json,.json" onChange={choose} />
+        </>
+      ) : (
+        <>
+          <div className="filepill">{stage.fileName}</div>
+          <div className="sect">This backup has</div>
+          <BackupCounts summary={summarizeBackup(stage.file)} />
+          <div className="warn">
+            <b>This replaces what's on this phone now:</b> {currentSummary.customOptions} custom options,{' '}
+            {currentSummary.tips} tips, and {currentSummary.savedMeals} saved meals. It can't be undone.
+          </div>
+          {failed && <p className="error" role="alert">Couldn't restore that. Nothing was changed. Try again?</p>}
+          <div className="footer">
+            <button className="btn danger" disabled={pending} onClick={() => replace(stage.file)}>Replace my data</button>
+            <button className="btn ghost" disabled={pending} onClick={chooseAgain}>Cancel</button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
