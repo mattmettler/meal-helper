@@ -184,7 +184,6 @@ label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display
 .optgroup { margin-bottom: 14px; }
 .mini { display: inline-block; font-size: 13px; font-weight: 600; padding: 7px 12px; min-height: 44px; border: 0; border-radius: 99px; background: var(--c); margin: 0 6px 6px 0; cursor: pointer; }
 .mini.custom { border: 2px dashed var(--cd); background: var(--card); }
-.badge { font-size: 11px; font-weight: 800; color: var(--ink-soft); }
 .addrow { min-height: 44px; border: 0; background: transparent; padding: 0; font-size: 13px; font-weight: 800; color: var(--ink-soft); cursor: pointer; }
 .linkrow { display: flex; align-items: center; width: 100%; min-height: 44px; border: 0; background: transparent; padding: 0 2px; margin: 8px 0 14px; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
 .linkrow .go { margin-left: auto; color: var(--ink-soft); }
@@ -205,3 +204,17 @@ label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display
 .checkrow input:focus-visible + .box { outline: 3px solid var(--cd); outline-offset: 2px; }
 .checkrow.on .box { background: var(--c); border-color: var(--cd); }
 .checkrow.on .box::after { content: "\2713"; }
+
+.hint { font-size: 13px; color: var(--ink-soft); margin: 6px 0 12px; }
+.card .hint { margin: 2px 0 0; }
+.card .counter { margin-top: 6px; }
+.card .linkrow { margin: 0; }
+.card .linkrow .back { margin-left: auto; padding: 0; }
+.card .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; background: var(--card); border: 2px dashed var(--cd); margin-left: 6px; }
+.card .badge.solid { border-style: solid; border-color: var(--line); }
+.tiprow { display: flex; gap: 10px; align-items: flex-start; background: var(--card); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; border-left: 4px solid var(--cd); font-size: 13px; }
+.tiprow.locked { background: #F6F1E8; color: var(--ink-soft); }
+.tiprow .x { margin-left: auto; min-width: 44px; min-height: 44px; margin-top: -10px; margin-bottom: -10px; border: 0; background: transparent; color: var(--ink-soft); font-weight: 800; font-size: 16px; cursor: pointer; }
+textarea.field { min-height: 76px; resize: vertical; }
+.restore { margin-left: auto; min-height: 44px; border: 0; border-radius: 99px; padding: 9px 16px; font-weight: 800; font-size: 13px; background: var(--c); cursor: pointer; }
+.restore:disabled, .btn:disabled { opacity: .6; cursor: default; }

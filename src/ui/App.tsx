@@ -4,10 +4,15 @@ import { backupReminder } from '../logic/backupReminder'
 import { db } from '../storage/instance'
 import { deleteSavedMeal, listSavedMeals, saveMeal, setFavorite } from '../storage/savedMeals'
 import { getLastBackupAt } from '../storage/settings'
-import { addCustomOptionWithClashes } from '../storage/userData'
+import {
+  addCustomOptionWithClashes, addUserTip, deleteCustomOption, deleteUserTip, hideBuiltInOption,
+  restoreBuiltInOption, setClashes, updateCustomOptionNote,
+} from '../storage/userData'
 import { Build } from './screens/Build'
 import type { ReminderState } from './screens/BackupReminder'
 import { Compatibility } from './screens/Compatibility'
+import { HiddenOptions } from './screens/HiddenOptions'
+import { OptionDetail } from './screens/OptionDetail'
 import { OptionAdd } from './screens/OptionAdd'
 import { Options } from './screens/Options'
 import { Saved } from './screens/Saved'
@@ -20,6 +25,9 @@ type OptionsView =
   | { screen: 'home' }
   | { screen: 'add'; stepId: StepId; name?: string; note?: string }
   | { screen: 'compatibility'; input: { stepId: StepId; name: string; note?: string } }
+  | { screen: 'detail'; optionId: string }
+  | { screen: 'editClashes'; optionId: string }
+  | { screen: 'hidden' }
 
 export function App() {
   const [tab, setTab] = useState<Tab>('build')
@@ -36,6 +44,10 @@ export function App() {
   if (!catalog || !meals || !reminder) return <p className="loading">Loading...</p>
 
   const openMeal = meals.find(m => m.id === openMealId)
+  const backToOptions = () => setOptionsView({ screen: 'home' })
+  const clashEditOption = optionsView.screen === 'editClashes'
+    ? catalog.options.find(o => o.id === optionsView.optionId)
+    : undefined
 
   return (
     <div className="app">
@@ -82,12 +94,49 @@ export function App() {
               onBack={() => setOptionsView({ screen: 'add', ...optionsView.input })}
             />
           )}
+          {optionsView.screen === 'detail' && (
+            <OptionDetail
+              key={optionsView.optionId}
+              catalog={catalog}
+              optionId={optionsView.optionId}
+              onSaveNote={note => updateCustomOptionNote(db, optionsView.optionId, note)}
+              onEditClashes={() => setOptionsView({ screen: 'editClashes', optionId: optionsView.optionId })}
+              onAddTip={text => addUserTip(db, optionsView.optionId, text)}
+              onDeleteTip={tipId => deleteUserTip(db, tipId)}
+              onHide={async () => { await hideBuiltInOption(db, optionsView.optionId); backToOptions() }}
+              onDelete={async () => { await deleteCustomOption(db, optionsView.optionId); backToOptions() }}
+              onBack={backToOptions}
+            />
+          )}
+          {optionsView.screen === 'editClashes' && clashEditOption && (
+            <Compatibility
+              catalog={catalog}
+              optionName={clashEditOption.name}
+              stepId={clashEditOption.stepId}
+              initialChecked={catalog.pairs
+                .filter(p => p.a === clashEditOption.id || p.b === clashEditOption.id)
+                .map(p => (p.a === clashEditOption.id ? p.b : p.a))}
+              excludeOptionId={clashEditOption.id}
+              onSave={async checkedIds => {
+                await setClashes(db, clashEditOption.id, checkedIds)
+                setOptionsView({ screen: 'detail', optionId: clashEditOption.id })
+              }}
+              onBack={() => setOptionsView({ screen: 'detail', optionId: clashEditOption.id })}
+            />
+          )}
+          {optionsView.screen === 'hidden' && (
+            <HiddenOptions
+              catalog={catalog}
+              onRestore={optionId => restoreBuiltInOption(db, optionId)}
+              onBack={backToOptions}
+            />
+          )}
           {optionsView.screen === 'home' && (
             <Options
               catalog={catalog}
-              onOpenOption={() => {}}
+              onOpenOption={optionId => setOptionsView({ screen: 'detail', optionId })}
               onAdd={stepId => setOptionsView({ screen: 'add', stepId })}
-              onOpenHidden={() => {}}
+              onOpenHidden={() => setOptionsView({ screen: 'hidden' })}
               onOpenBackup={() => {}}
               reminder={reminder}
             />
