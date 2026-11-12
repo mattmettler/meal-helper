@@ -332,7 +332,7 @@ export interface UserData {
 - [ ] **Step 1: Write failing tests** with a small hand-built `Catalog` (no seed dependency):
   - shows `Step 1 of 6` and the step name; option cards show the note under the name when present and only the name otherwise.
   - single-select: tapping a second option replaces the first; multi-select: two options stay selected (`aria-pressed`).
-  - the primary button reads `Skip` with no picks, `Next` with picks, and `Finish` on step 6.
+  - the primary button reads `Skip` with no picks and `Next` with picks on steps 1 to 5, and `Finish` on step 6 whether or not anything is picked.
   - options that clash with an earlier pick are not shown; a step with no available options shows `Nothing fits with your picks, skip ahead` and the button still advances.
   - Back keeps picks; changing an earlier pick removes a later pick that now clashes.
   - finishing with too-thin picks shows `TOO_THIN_MESSAGE` and a `Start over` button that returns to `Step 1 of 6` with nothing selected.
