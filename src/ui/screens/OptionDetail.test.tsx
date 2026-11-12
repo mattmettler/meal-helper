@@ -221,4 +221,41 @@ describe('OptionDetail tips', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Delete tip: Rinse first.' }))
     expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't save that. Try again?")
   })
+
+  it('clears the note error once the note is edited', async () => {
+    renderIt('farro')
+    const note = screen.getByLabelText('Short note')
+    await userEvent.clear(note)
+    await userEvent.type(note, 'x'.repeat(41))
+    await userEvent.click(screen.getByRole('button', { name: 'Save note' }))
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    await userEvent.type(note, 'y')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('clears the tip error once the tip is edited', async () => {
+    renderIt('farro')
+    await userEvent.click(screen.getByRole('button', { name: 'Add tip' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Write a tip first')
+    await userEvent.type(screen.getByLabelText('Add a tip for Farro'), 'a')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('does not leave a tip error beside a later failure', async () => {
+    const onDeleteTip = vi.fn().mockRejectedValue(new Error('nope'))
+    renderIt('farro', { onDeleteTip })
+    await userEvent.click(screen.getByRole('button', { name: 'Add tip' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Delete tip: Rinse first.' }))
+    expect(await screen.findAllByRole('alert')).toHaveLength(1)
+  })
+
+  it('clears a failure when the delete confirmation is cancelled', async () => {
+    const onDelete = vi.fn().mockRejectedValue(new Error('nope'))
+    renderIt('farro', { onDelete })
+    await userEvent.click(screen.getByRole('button', { name: 'Delete this option' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Yes, delete' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })

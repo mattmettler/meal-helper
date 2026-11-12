@@ -210,6 +210,7 @@ label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display
 .card .counter { margin-top: 6px; }
 .card .linkrow { margin: 0; }
 .card .linkrow .back { margin-left: auto; padding: 0; }
+.badge { font-size: 11px; font-weight: 800; color: var(--ink-soft); }
 .card .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; background: var(--card); border: 2px dashed var(--cd); margin-left: 6px; }
 .card .badge.solid { border-style: solid; border-color: var(--line); }
 .tiprow { display: flex; gap: 10px; align-items: flex-start; background: var(--card); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; border-left: 4px solid var(--cd); font-size: 13px; }

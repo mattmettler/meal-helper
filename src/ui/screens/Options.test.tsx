@@ -47,6 +47,9 @@ describe('Options', () => {
     renderOptions()
     expect(screen.getByRole('button', { name: /Farro/ })).toHaveTextContent('your own')
     expect(screen.getByRole('button', { name: /Brown rice/ })).not.toHaveTextContent('your own')
+    const marker = screen.getByRole('button', { name: /Farro/ }).querySelector('.badge')
+    expect(marker).toHaveTextContent('your own')
+
   })
 
   it('opens an option and adds one for a step', async () => {

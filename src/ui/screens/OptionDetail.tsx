@@ -22,7 +22,8 @@ export function OptionDetail({
   const option = catalog.options.find(o => o.id === optionId)
   const [note, setNote] = useState(option?.note ?? '')
   const [tipText, setTipText] = useState('')
-  const [validationError, setValidationError] = useState<string | null>(null)
+  const [noteError, setNoteError] = useState<string | null>(null)
+  const [tipError, setTipError] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -41,6 +42,8 @@ export function OptionDetail({
   async function run(action: () => void | Promise<void>): Promise<boolean> {
     setPending(true)
     setFailed(false)
+    setNoteError(null)
+    setTipError(null)
     try {
       await action()
       return true
@@ -54,14 +57,14 @@ export function OptionDetail({
 
   async function saveNote() {
     const message = validateOptionInput({ name: option!.name, note })
-    setValidationError(message)
+    setNoteError(message)
     if (message) return
     await run(() => onSaveNote(note.trim() || undefined))
   }
 
   async function addTip() {
     const message = validateTipText(tipText)
-    setValidationError(message)
+    setTipError(message)
     if (message) return
     if (await run(() => onAddTip(tipText.trim()))) setTipText('')
   }
@@ -83,9 +86,10 @@ export function OptionDetail({
               className="field"
               style={{ marginBottom: 0 }}
               value={note}
-              onChange={e => setNote(e.target.value)}
+              onChange={e => { setNote(e.target.value); setNoteError(null) }}
             />
             <div className="counter">{note.length} / {NOTE_MAX_LENGTH}</div>
+            {noteError && <p className="error" role="alert">{noteError}</p>}
             <button className="btn" disabled={pending} onClick={saveNote}>Save note</button>
           </>
         ) : (
@@ -134,17 +138,17 @@ export function OptionDetail({
         aria-label={`Add a tip for ${option.name}`}
         placeholder={`Add a tip for ${option.name}`}
         value={tipText}
-        onChange={e => setTipText(e.target.value)}
+        onChange={e => { setTipText(e.target.value); setTipError(null) }}
       />
       <button className="btn" disabled={pending} onClick={addTip}>Add tip</button>
-      {validationError && <p className="error" role="alert">{validationError}</p>}
+      {tipError && <p className="error" role="alert">{tipError}</p>}
       {failed && <p className="error" role="alert">Couldn't save that. Try again?</p>}
       {option.isCustom ? (
         confirmingDelete ? (
           <>
             <p className="nothing-fits">Delete this option for good? Its tips and clashes go too.</p>
             <button className="btn step-protein" disabled={pending} onClick={() => run(onDelete)}>Yes, delete</button>
-            <button className="btn ghost" disabled={pending} onClick={() => setConfirmingDelete(false)}>Cancel</button>
+            <button className="btn ghost" disabled={pending} onClick={() => { setConfirmingDelete(false); setFailed(false) }}>Cancel</button>
           </>
         ) : (
           <button className="btn ghost" disabled={pending} onClick={() => setConfirmingDelete(true)}>Delete this option</button>
