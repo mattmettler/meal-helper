@@ -6,11 +6,12 @@ recolored. Enclosed white areas inside the artwork (a bird's face, belly,
 wing stripes) stay white. Edge pixels are blended so there is no white halo.
 
 Standard library only. Reads an 8-bit, non-interlaced RGB or RGBA PNG and
-writes an opaque RGB PNG.
+writes an opaque RGB PNG. With --center, the artwork is also shifted so its
+bounding box is centered.
 
 Example:
   python scripts/set-icon-background.py assets/icon/icon-source-1024.png \\
-      assets/icon/icon-1024.png --color F6E3A1
+      assets/icon/icon-1024.png --color F6E3A1 --center
 """
 import argparse
 import struct
@@ -20,6 +21,7 @@ from collections import deque
 
 OUTSIDE_THRESHOLD = 128  # lightness above this counts as background when flood filling
 EDGE_GROW_PIXELS = 2     # how far past the flood fill to blend antialiased edge pixels
+INK_THRESHOLD = 120      # lightness below this counts as artwork when centering
 
 
 def fail(message):
@@ -91,12 +93,40 @@ def write_png(path, width, height, rgb):
     open(path, "wb").write(png)
 
 
+def center_artwork(rgb, width, height, bg):
+    """Shift the dark artwork so its bounding box is centered; new edges get the background color."""
+    xs, ys = [], []
+    for y in range(height):
+        for x in range(width):
+            i = (y * width + x) * 3
+            if (rgb[i] + rgb[i + 1] + rgb[i + 2]) / 3 < INK_THRESHOLD:
+                xs.append(x)
+                ys.append(y)
+    if not xs:
+        fail("no dark artwork found to center")
+    dx = round((width - 1) / 2 - (min(xs) + max(xs)) / 2)
+    dy = round((height - 1) / 2 - (min(ys) + max(ys)) / 2)
+    shifted = bytearray(bytes(bg) * (width * height))
+    for y in range(height):
+        ny = y + dy
+        if not 0 <= ny < height:
+            continue
+        for x in range(width):
+            nx = x + dx
+            if 0 <= nx < width:
+                shifted[(ny * width + nx) * 3:(ny * width + nx) * 3 + 3] = rgb[(y * width + x) * 3:(y * width + x) * 3 + 3]
+    print(f"centered artwork: shifted by ({dx}, {dy}) pixels")
+    return shifted
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("input", help="source PNG with dark artwork on a white background")
     parser.add_argument("output", help="where to write the recolored opaque PNG")
     parser.add_argument("--color", required=True, help="background color as hex, e.g. F6E3A1")
+    parser.add_argument("--center", action="store_true",
+                        help="also shift the artwork so its bounding box is centered in the image")
     args = parser.parse_args()
 
     try:
@@ -157,6 +187,9 @@ def main():
                 out[i * 3 + c] = round(dark_rgb[c] * coverage + bg[c] * (1 - coverage))
         else:
             out[i * 3:i * 3 + 3] = bytes(pixel_rgb(i))
+
+    if args.center:
+        out = center_artwork(out, width, height, bg)
 
     write_png(args.output, width, height, out)
     print(f"wrote {args.output} ({width}x{height}), background #{args.color.lstrip('#').upper()}, "
