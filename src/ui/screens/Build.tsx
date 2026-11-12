@@ -21,6 +21,7 @@ export function Build({ catalog, onSave }: BuildProps) {
   const [rawPicks, setPicks] = useState(emptyPicks)
   const [phase, setPhase] = useState<Phase>('building')
   const [saveFailed, setSaveFailed] = useState(false)
+  const [saving, setSaving] = useState(false)
   const picks = useMemo(() => prunePicks(catalog, rawPicks), [catalog, rawPicks])
 
   const step = STEPS[stepIndex]
@@ -36,11 +37,14 @@ export function Build({ catalog, onSave }: BuildProps) {
   }
 
   async function save(meal: Meal) {
+    setSaving(true)
     try {
       await onSave(meal)
     } catch {
       setSaveFailed(true)
       return
+    } finally {
+      setSaving(false)
     }
     startOver()
   }
@@ -64,6 +68,7 @@ export function Build({ catalog, onSave }: BuildProps) {
         meal={buildMeal(catalog, picks)}
         onSave={save}
         saveFailed={saveFailed}
+        saving={saving}
         onDiscard={startOver}
       />
     )

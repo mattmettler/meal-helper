@@ -218,6 +218,23 @@ describe('Build', () => {
     expect(screen.getByRole('button', { name: /^Rice/ })).toHaveAttribute('aria-pressed', 'false')
   })
 
+  it('ignores a second Save tap while saving and disables the buttons until it fails', async () => {
+    let reject: (error: Error) => void = () => {}
+    const onSave = vi.fn().mockReturnValueOnce(new Promise<void>((_, r) => { reject = r }))
+    const user = renderBuild(onSave)
+    await finishWith(user, [/^Rice/, 'Kale'])
+    const save = screen.getByRole('button', { name: 'Save this meal' })
+    await user.click(save)
+    await user.click(save)
+    expect(onSave).toHaveBeenCalledTimes(1)
+    expect(save).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled()
+    reject(new Error('disk full'))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save this meal' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeEnabled()
+  })
+
   it('stays on the result with the typed name when saving fails, then saves on retry', async () => {
     const onSave = vi.fn().mockRejectedValueOnce(new Error('disk full')).mockResolvedValueOnce(undefined)
     const user = renderBuild(onSave)
