@@ -6,7 +6,7 @@ Source: `PRD.md` plus the decisions below. Where this document and the PRD disag
 
 ## 1. Purpose and audience
 
-A personal offline PWA for the author and a few friends. A user walks through six fixed steps, picks options, and gets a generated meal (a name, the picks, and a tip or two per ingredient). It helps someone improvise an easy bowl-style meal without brainstorming from scratch.
+A personal offline PWA for the author and a few friends. A user walks through six fixed steps, picks options, and gets a generated meal (a name, the picks, and a tip or two per ingredient). It helps someone improvise an easy meal without brainstorming from scratch.
 
 Success criteria:
 
@@ -85,10 +85,10 @@ Pure string assembly from option names:
 
 - Let `list` be the picked Protein, then Greens, then Filler Veggies (in that order). Sauces and Garnish/Texture never appear in the name.
 - Join rules: one item `A`; two `A and B`; three `A, B, and C`; more than three: the first three followed by `& more` (`A, B, C & more`).
-- With a Starch/Base pick: `{Starch} Bowl with {list}`, or `{Starch} Bowl` if `list` is empty.
-- Without a Starch/Base pick: `{list} Bowl`.
+- With a Starch/Base pick: `{Starch} Meal with {list}`, or `{Starch} Meal` if `list` is empty.
+- Without a Starch/Base pick: `{list} Meal`.
 
-Examples: Rice + Chicken + Spinach gives "Rice Bowl with Chicken and Spinach". Chicken + Spinach gives "Chicken and Spinach Bowl".
+Examples: Rice + Chicken + Spinach gives "Rice Meal with Chicken and Spinach". Chicken + Spinach gives "Chicken and Spinach Meal".
 
 On the result screen the name is pre-filled in an editable field. The user can accept it or retype it before saving.
 

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Improvised Meal Guide: Mockup v1</title>
+<style>
+  :root {
+    --bg: #FBF6EE;
+    --card: #FFFFFF;
+    --ink: #4A4458;
+    --ink-soft: #8A8497;
+    --line: #EDE4D6;
+
+    /* one soft accent per step */
+    --starch: #F6E3A1;   --starch-d: #E9CB6B;
+    --greens: #BCD7B1;   --greens-d: #8FBC82;
+    --protein: #F4BFA9;  --protein-d: #E89A7B;
+    --veggies: #B5D5E3;  --veggies-d: #86B9D0;
+    --sauces: #D3C3E8;   --sauces-d: #B09BD3;
+    --garnish: #F2C4D3;  --garnish-d: #E29AB3;
+
+    --radius: 20px;
+    --shadow: 0 4px 14px rgba(74, 68, 88, 0.10);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 16px 64px;
+    background: #EFE8DC;
+    font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+  }
+  h1 { text-align: center; font-size: 22px; margin: 0 0 4px; }
+  .sub { text-align: center; color: var(--ink-soft); margin: 0 0 28px; font-size: 14px; }
+  .board { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; }
+  figure { margin: 0; }
+  figcaption { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: 10px; }
+
+  /* phone frame */
+  .phone {
+    width: 360px; height: 720px; background: var(--bg);
+    border-radius: 36px; border: 8px solid #3F3A4B;
+    overflow: hidden; position: relative; display: flex; flex-direction: column;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+  }
+  .screen { flex: 1; overflow-y: auto; padding: 18px 18px 12px; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* header */
+  .top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; background: #fff; box-shadow: var(--shadow); padding: 2px; }
+  .top .title { font-weight: 800; font-size: 16px; }
+  .top .back { margin-left: auto; font-size: 13px; color: var(--ink-soft); }
+
+  /* progress */
+  .progress { display: flex; gap: 6px; margin-bottom: 6px; }
+  .progress i { flex: 1; height: 8px; border-radius: 99px; background: var(--line); }
+  .progress i.done { background: var(--c); }
+  .progress i.now { background: var(--c); box-shadow: 0 0 0 3px rgba(74,68,88,0.10); }
+  .stepcount { font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
+
+  .bubble {
+    background: var(--c); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
+  }
+  .bubble h2 { margin: 0 0 2px; font-size: 22px; }
+  .bubble p { margin: 0; font-size: 13px; color: var(--ink); opacity: 0.8; }
+
+  /* chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    border: 2px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 99px; padding: 11px 16px; font: inherit; font-size: 15px; font-weight: 600;
+    min-height: 44px; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .chip[aria-pressed="true"] { background: var(--c); border-color: var(--cd); }
+  .chip[aria-pressed="true"]::before { content: "✓ "; }
+
+  /* buttons */
+  .btn {
+    display: block; width: 100%; border: 0; border-radius: 99px; padding: 15px;
+    font: inherit; font-weight: 800; font-size: 16px; color: var(--ink); cursor: pointer;
+    background: var(--c, #F4BFA9); box-shadow: var(--shadow);
+  }
+  .btn.ghost { background: transparent; box-shadow: none; color: var(--ink-soft); font-weight: 700; }
+  .footer { padding: 10px 18px 14px; }
+
+  /* tab bar */
+  .tabs { display: flex; background: #fff; border-top: 1px solid var(--line); padding: 8px 6px 12px; }
+  .tabs div { flex: 1; text-align: center; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+  .tabs div span { display: block; font-size: 20px; }
+  .tabs .on { color: var(--ink); }
+  .tabs .on span { filter: none; }
+
+  /* cards */
+  .card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .group-label { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; background: var(--c); margin-bottom: 8px; }
+  .pick { font-weight: 800; font-size: 16px; margin: 4px 0 2px; }
+  .tip { font-size: 13px; color: var(--ink-soft); margin: 0 0 8px; padding-left: 12px; border-left: 3px solid var(--cd); }
+  .mealname { font-size: 24px; font-weight: 800; line-height: 1.2; margin: 4px 0 14px; }
+  .field { width: 100%; border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; font: inherit; font-size: 15px; font-weight: 700; background: #fff; color: var(--ink); margin-bottom: 12px; }
+  label.small { font-size: 12px; color: var(--ink-soft); font-weight: 700; display: block; margin: 8px 0 4px; }
+
+  /* saved list */
+  .row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); margin-bottom: 10px; }
+  .row .name { font-weight: 800; font-size: 15px; }
+  .row .when { font-size: 12px; color: var(--ink-soft); }
+  .row .heart { margin-left: auto; font-size: 22px; }
+  .sect { font-size: 12px; font-weight: 800; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; margin: 14px 2px 8px; }
+
+  /* options screen */
+  .optgroup { margin-bottom: 14px; }
+  .mini { display: inline-block; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 99px; background: var(--c); margin: 0 6px 6px 0; }
+  .mini.custom { border: 2px dashed var(--cd); background: #fff; }
+  .addrow { font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+  .backup { background: #F3EEFA; border-radius: var(--radius); padding: 14px 16px; }
+  .backup p { margin: 0 0 10px; font-size: 13px; }
+
+  /* too thin */
+  .center { text-align: center; padding-top: 60px; }
+  .center img { width: 120px; height: 120px; border-radius: 28px; background: #fff; box-shadow: var(--shadow); padding: 8px; }
+  .center h2 { font-size: 20px; margin: 22px 8px 8px; line-height: 1.35; }
+  .center p { color: var(--ink-soft); font-size: 14px; margin: 0 20px 24px; }
+
+  .sg { --c: var(--starch);  --cd: var(--starch-d); }
+  .gr { --c: var(--greens);  --cd: var(--greens-d); }
+  .pr { --c: var(--protein); --cd: var(--protein-d); }
+  .fv { --c: var(--veggies); --cd: var(--veggies-d); }
+  .sa { --c: var(--sauces);  --cd: var(--sauces-d); }
+  .ga { --c: var(--garnish); --cd: var(--garnish-d); }
+</style>
+</head>
+<body>
+<h1>Improvised Meal Guide</h1>
+<p class="sub">Mockup v1. Chips are tappable. Each step has its own soft color.</p>
+
+<div class="board">
+
+  <!-- 1. Build: Greens (multi) -->
+  <figure>
+    <div class="phone">
+      <div class="screen gr">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-source-1024.png" alt=""><span class="title">Build a meal</span><span class="back">‹ Back</span></div>
+        <div class="progress">
+          <i class="done" style="--c:var(--starch)"></i><i class="now" style="--c:var(--greens)"></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="stepcount">Step 2 of 6</div>
+        <div class="bubble"><h2>Greens</h2><p>Pick as many as you like, or skip.</p></div>
+        <div class="chips" data-mode="multi">
+          <button class="chip" aria-pressed="true">Spinach</button>
+          <button class="chip" aria-pressed="false">Kale</button>
+          <button class="chip" aria-pressed="true">Arugula</button>
+          <button class="chip" aria-pressed="false">Romaine</button>
+          <button class="chip" aria-pressed="false">Cabbage</button>
+          <button class="chip" aria-pressed="false">Bok choy</button>
+          <button class="chip" aria-pressed="false">Mixed greens</button>
+        </div>
+      </div>
+      <div class="footer gr"><button class="btn">Next</button></div>
+      <div class="tabs"><div class="on"><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Build: multi-select step</figcaption>
+  </figure>
+
+  <!-- 2. Build: Starch (single) -->
+  <figure>
+    <div class="phone">
+      <div class="screen sg">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-source-1024.png" alt=""><span class="title">Build a meal</span></div>
+        <div class="progress">
+          <i class="now" style="--c:var(--starch)"></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="stepcount">Step 1 of 6</div>
+        <div class="bubble"><h2>Starch / Base</h2><p>Pick one, or skip.</p></div>
+        <div class="chips" data-mode="single">
+          <button class="chip" aria-pressed="true">Brown rice</button>
+          <button class="chip" aria-pressed="false">White rice</button>
+          <button class="chip" aria-pressed="false">Quinoa</button>
+          <button class="chip" aria-pressed="false">Rice noodles</button>
+          <button class="chip" aria-pressed="false">Couscous</button>
+          <button class="chip" aria-pressed="false">Sweet potato</button>
+          <button class="chip" aria-pressed="false">Pasta</button>
+        </div>
+      </div>
+      <div class="footer sg"><button class="btn">Next</button></div>
+      <div class="tabs"><div class="on"><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Build: single-select step (Next becomes Skip when nothing is picked)</figcaption>
+  </figure>
+
+  <!-- 3. Result -->
+  <figure>
+    <div class="phone">
+      <div class="screen">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-source-1024.png" alt=""><span class="title">Your meal</span></div>
+        <div class="mealname">Brown Rice Meal with Chicken, Spinach, and Arugula</div>
+
+        <div class="card sg"><span class="group-label">Starch / Base</span>
+          <div class="pick">Brown rice</div>
+          <p class="tip">Toast the dry grains in the pot for a minute before adding water for a nuttier flavor.</p></div>
+
+        <div class="card gr"><span class="group-label">Greens</span>
+          <div class="pick">Spinach</div>
+          <p class="tip">Add at the very end. It wilts in seconds.</p>
+          <div class="pick">Arugula</div>
+          <p class="tip">Keep it raw and toss on top so it stays peppery.</p></div>
+
+        <div class="card pr"><span class="group-label">Protein</span>
+          <div class="pick">Chicken thighs</div>
+          <p class="tip">Pat dry and leave it untouched in the pan for a good crust.</p></div>
+
+        <div class="card sa"><span class="group-label">Sauces</span>
+          <div class="pick">Peanut sauce</div>
+          <p class="tip">Thin with a splash of warm water until it drizzles.</p></div>
+
+        <label class="small">Name your meal</label>
+        <input class="field" value="Brown Rice Meal with Chicken, Spinach, and Arugula">
+        <button class="btn" style="--c:var(--greens)">Save this meal</button>
+        <button class="btn ghost">Discard</button>
+      </div>
+      <div class="tabs"><div class="on"><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Result: tips inline under each pick, name pre-filled</figcaption>
+  </figure>
+
+  <!-- 4. Saved -->
+  <figure>
+    <div class="phone">
+      <div class="screen">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-source-1024.png" alt=""><span class="title">Saved meals</span></div>
+        <div class="sect">Favorites</div>
+        <div class="row"><div><div class="name">Friday Peanut Chicken Meal</div><div class="when">Saved Nov 8</div></div><div class="heart">💛</div></div>
+        <div class="row"><div><div class="name">Quinoa Meal with Salmon and Kale</div><div class="when">Saved Oct 29</div></div><div class="heart">💛</div></div>
+        <div class="sect">Everything else</div>
+        <div class="row"><div><div class="name">Rice Meal with Tofu and Bok Choy</div><div class="when">Saved Nov 10</div></div><div class="heart" style="opacity:.35">🤍</div></div>
+        <div class="row"><div><div class="name">Couscous Meal with Chickpeas</div><div class="when">Saved Nov 2</div></div><div class="heart" style="opacity:.35">🤍</div></div>
+        <div class="row"><div><div class="name">Pasta Meal with Shrimp and Spinach</div><div class="when">Saved Oct 20</div></div><div class="heart" style="opacity:.35">🤍</div></div>
+      </div>
+      <div class="tabs"><div><span>🥣</span>Build</div><div class="on"><span>💛</span>Saved</div><div><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Saved: favorites first, then newest</figcaption>
+  </figure>
+
+  <!-- 5. Options -->
+  <figure>
+    <div class="phone">
+      <div class="screen">
+        <div class="top"><img class="logo" src="../../assets/icon/icon-source-1024.png" alt=""><span class="title">Your options</span></div>
+
+        <div class="optgroup sg"><div class="group-label">Starch / Base</div><br>
+          <span class="mini">Brown rice</span><span class="mini">White rice</span><span class="mini">Quinoa</span><span class="mini custom">Farro</span>
+          <div class="addrow">+ Add an option</div></div>
+
+        <div class="optgroup gr"><div class="group-label">Greens</div><br>
+          <span class="mini">Spinach</span><span class="mini">Kale</span><span class="mini">Arugula</span><span class="mini">Romaine</span>
+          <div class="addrow">+ Add an option</div></div>
+
+        <div class="optgroup pr"><div class="group-label">Protein</div><br>
+          <span class="mini">Chicken thighs</span><span class="mini">Tofu</span><span class="mini">Salmon</span><span class="mini custom">Meatballs</span>
+          <div class="addrow">+ Add an option</div></div>
+
+        <div class="sect">Hidden options (3)  ›</div>
+
+        <div class="backup">
+          <p><b>Backup</b><br>Last backed up 12 days ago.</p>
+          <button class="btn" style="--c:var(--sauces)">Export backup</button>
+          <button class="btn ghost">Import backup</button>
+        </div>
+      </div>
+      <div class="tabs"><div><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div class="on"><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>Options: dashed outline marks your own additions</figcaption>
+  </figure>
+
+  <!-- 6. Too thin -->
+  <figure>
+    <div class="phone">
+      <div class="screen">
+        <div class="center">
+          <img src="../../assets/icon/icon-source-1024.png" alt="">
+          <h2>You've got to eat something and I know you can do better than that &lt;3 Give it another try!</h2>
+          <p>Pick at least a starch, greens, or protein, plus one more thing.</p>
+          <button class="btn" style="--c:var(--protein)">Start over</button>
+        </div>
+      </div>
+      <div class="tabs"><div class="on"><span>🥣</span>Build</div><div><span>💛</span>Saved</div><div><span>🌿</span>Options</div></div>
+    </div>
+    <figcaption>"Too thin" message (builder resets)</figcaption>
+  </figure>
+
+</div>
+
+<script>
+  document.querySelectorAll('.chips').forEach(function (group) {
+    group.addEventListener('click', function (e) {
+      var chip = e.target.closest('.chip');
+      if (!chip) return;
+      var on = chip.getAttribute('aria-pressed') === 'true';
+      if (group.dataset.mode === 'single') {
+        group.querySelectorAll('.chip').forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
+      }
+      chip.setAttribute('aria-pressed', on ? 'false' : 'true');
+    });
+  });
+</script>
+</body>
+</html>
