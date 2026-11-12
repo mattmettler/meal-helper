@@ -2,8 +2,8 @@ import { useState, type ChangeEvent } from 'react'
 import {
   NEWER_VERSION, parseBackup, summarizeBackup, type BackupFile, type BackupSummary,
 } from '../../storage/backup'
-import iconUrl from '../../../assets/icon/icon-1024.png'
 import { readFileText } from '../readFileText'
+import { Logo } from '../Logo'
 import { BackupCounts } from './BackupCounts'
 
 interface BackupImportProps {
@@ -65,7 +65,7 @@ export function BackupImport({ currentSummary, onReplace, onBack }: BackupImport
     return (
       <div className="step-protein">
         <div className="center">
-          <img src={iconUrl} alt="" />
+          <Logo large />
           <h2>{stage.message}</h2>
           <p>Nothing was changed. Try picking a different file.</p>
           <button className="btn" onClick={chooseAgain}>Choose another file</button>
@@ -79,7 +79,7 @@ export function BackupImport({ currentSummary, onReplace, onBack }: BackupImport
     return (
       <div className="step-greens">
         <div className="center">
-          <img src={iconUrl} alt="" />
+          <Logo large />
           <h2>All restored!</h2>
           <p>{customOptions} custom options, {tips} tips, and {savedMeals} saved meals are back.</p>
           <button className="btn" onClick={onBack}>Done</button>
@@ -91,6 +91,7 @@ export function BackupImport({ currentSummary, onReplace, onBack }: BackupImport
   return (
     <div className="step-protein">
       <div className="top">
+        <Logo />
         <h1>Restore from backup</h1>
         <button className="back" onClick={onBack}>&lsaquo; Options</button>
       </div>

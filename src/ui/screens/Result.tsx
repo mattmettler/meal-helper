@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Meal } from '../../logic/types'
+import { Logo } from '../Logo'
 import { MealGroups } from './MealGroups'
 
 interface ResultProps {
@@ -14,7 +15,10 @@ export function Result({ meal, onSave, saveFailed, onDiscard }: ResultProps) {
 
   return (
     <>
-      <h1>Your meal</h1>
+      <div className="top">
+        <Logo />
+        <h1>Your meal</h1>
+      </div>
       <MealGroups groups={meal.groups} />
       <label className="small" htmlFor="meal-name">Name your meal</label>
       <input id="meal-name" className="field" value={name} onChange={e => setName(e.target.value)} />

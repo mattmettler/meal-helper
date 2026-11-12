@@ -6,6 +6,7 @@ import { STEPS, emptyPicks } from '../../logic/steps'
 import type { Catalog, Meal } from '../../logic/types'
 import { validateMeal } from '../../logic/validate'
 import { stepClass } from '../stepTheme'
+import { Logo } from '../Logo'
 import { Result } from './Result'
 
 interface BuildProps {
@@ -71,6 +72,7 @@ export function Build({ catalog, onSave }: BuildProps) {
   if (phase === 'too-thin') {
     return (
       <div className="center">
+        <Logo large />
         <h2>{TOO_THIN_MESSAGE}</h2>
         <button className="btn step-protein" onClick={startOver}>Start over</button>
       </div>
@@ -82,6 +84,7 @@ export function Build({ catalog, onSave }: BuildProps) {
   return (
     <div className={stepClass(step.id)}>
       <div className="top">
+        <Logo />
         <h1>Build a meal</h1>
         {stepIndex > 0 && <button className="back" onClick={() => setStepIndex(stepIndex - 1)}>&lsaquo; Back</button>}
       </div>

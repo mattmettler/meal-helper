@@ -2,6 +2,7 @@ import { STEPS } from '../../logic/steps'
 import type { Catalog, StepId } from '../../logic/types'
 import { backupAge } from '../backupAge'
 import { stepClass } from '../stepTheme'
+import { Logo } from '../Logo'
 import { BackupReminder, type ReminderState } from './BackupReminder'
 
 interface OptionsProps {
@@ -18,7 +19,10 @@ export function Options({ catalog, onOpenOption, onAdd, onOpenHidden, onOpenBack
 
   return (
     <>
-      <h1>Your options</h1>
+      <div className="top">
+        <Logo />
+        <h1>Your options</h1>
+      </div>
       <BackupReminder reminder={reminder} />
       {STEPS.map(step => (
         <div key={step.id} className={`optgroup ${stepClass(step.id)}`}>

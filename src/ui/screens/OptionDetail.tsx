@@ -3,6 +3,7 @@ import { NOTE_MAX_LENGTH, validateOptionInput, validateTipText } from '../../log
 import { STEPS } from '../../logic/steps'
 import type { Catalog } from '../../logic/types'
 import { stepClass } from '../stepTheme'
+import { Logo } from '../Logo'
 
 interface OptionDetailProps {
   catalog: Catalog
@@ -72,6 +73,7 @@ export function OptionDetail({
   return (
     <div className={stepClass(option.stepId)}>
       <div className="top">
+        <Logo />
         <h1>{option.name}</h1>
         <button className="back" onClick={onBack}>&lsaquo; Options</button>
       </div>

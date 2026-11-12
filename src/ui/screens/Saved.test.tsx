@@ -23,6 +23,13 @@ describe('Saved', () => {
     expect(within(otherSection).queryByText('Friday Meal')).not.toBeInTheDocument()
   })
 
+  it('shows the kestrel logo in the header from a local asset', () => {
+    const { container } = render(<Saved meals={[]} onToggleFavorite={() => {}} onOpen={() => {}} reminder={noReminder} />)
+    const logo = container.querySelector('.top img.logo')
+    expect(logo).toHaveAttribute('src', expect.stringMatching(/^\/.*pwa-64x64\.png$/))
+    expect(logo).toHaveAttribute('alt', '')
+  })
+
   it('shows the saved date on each row', () => {
     render(<Saved meals={[other]} onToggleFavorite={() => {}} onOpen={() => {}} reminder={noReminder} />)
     const expected = new Date(2026, 10, 8).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })

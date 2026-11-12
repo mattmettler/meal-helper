@@ -1,4 +1,5 @@
 import type { SavedMeal } from '../../logic/types'
+import { Logo } from '../Logo'
 import { BackupReminder, type ReminderState } from './BackupReminder'
 
 interface SavedProps {
@@ -33,7 +34,10 @@ export function Saved({ meals, onToggleFavorite, onOpen, reminder }: SavedProps)
 
   return (
     <>
-      <h1>Saved meals</h1>
+      <div className="top">
+        <Logo />
+        <h1>Saved meals</h1>
+      </div>
       <BackupReminder reminder={reminder} />
       {meals.length === 0 && <p className="nothing-fits">No saved meals yet</p>}
       {favorites.length > 0 && (

@@ -168,6 +168,14 @@ describe('Build', () => {
     })
   })
 
+  it('shows the larger kestrel logo on the too-thin screen', async () => {
+    const user = renderBuild()
+    await finishWith(user, [/^Rice/])
+    const logo = document.querySelector('.center img')
+    expect(logo).toHaveAttribute('src', expect.stringMatching(/^\/.*pwa-192x192\.png$/))
+    expect(logo).toHaveAttribute('alt', '')
+  })
+
   it('shows the prefilled name and tips under each pick', async () => {
     const user = renderBuild()
     await finishWith(user, [/^Rice/, 'Kale'])

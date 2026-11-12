@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { BackupSummary } from '../../storage/backup'
 import { backupAge } from '../backupAge'
+import { Logo } from '../Logo'
 import { BackupCounts } from './BackupCounts'
 
 interface BackupExportProps {
@@ -30,6 +31,7 @@ export function BackupExport({ summary, lastBackupAt, fileName, onSave, onBack }
   return (
     <div className="step-sauces">
       <div className="top">
+        <Logo />
         <h1>Back up your data</h1>
         <button className="back" onClick={onBack}>&lsaquo; Options</button>
       </div>

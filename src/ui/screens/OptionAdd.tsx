@@ -3,6 +3,7 @@ import { NOTE_MAX_LENGTH, validateOptionInput } from '../../logic/inputRules'
 import { STEPS } from '../../logic/steps'
 import type { StepId } from '../../logic/types'
 import { stepClass } from '../stepTheme'
+import { Logo } from '../Logo'
 
 interface OptionAddProps {
   initialStepId?: StepId
@@ -28,6 +29,7 @@ export function OptionAdd({ initialStepId = 'starch', initialName = '', initialN
   return (
     <div className={stepClass(stepId)}>
       <div className="top">
+        <Logo />
         <h1>Add an option</h1>
         <button className="back" onClick={onBack}>&lsaquo; Options</button>
       </div>

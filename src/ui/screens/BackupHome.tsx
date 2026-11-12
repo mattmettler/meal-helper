@@ -1,3 +1,5 @@
+import { Logo } from '../Logo'
+
 interface BackupHomeProps {
   onExport: () => void
   onImport: () => void
@@ -8,6 +10,7 @@ export function BackupHome({ onExport, onImport, onBack }: BackupHomeProps) {
   return (
     <>
       <div className="top">
+        <Logo />
         <h1>Backup</h1>
         <button className="back" onClick={onBack}>&lsaquo; Options</button>
       </div>

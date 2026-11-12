@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { STEPS } from '../../logic/steps'
 import type { Catalog } from '../../logic/types'
 import { stepClass } from '../stepTheme'
+import { Logo } from '../Logo'
 
 interface HiddenOptionsProps {
   catalog: Catalog
@@ -28,6 +29,7 @@ export function HiddenOptions({ catalog, onRestore, onBack }: HiddenOptionsProps
   return (
     <>
       <div className="top">
+        <Logo />
         <h1>Hidden options</h1>
         <button className="back" onClick={onBack}>&lsaquo; Options</button>
       </div>

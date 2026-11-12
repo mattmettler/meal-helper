@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { SavedMeal } from '../../logic/types'
+import { Logo } from '../Logo'
 import { MealGroups } from './MealGroups'
 
 interface SavedDetailProps {
@@ -14,6 +15,7 @@ export function SavedDetail({ meal, onDelete, onBack }: SavedDetailProps) {
   return (
     <>
       <div className="top">
+        <Logo />
         <h1>{meal.name}</h1>
         <button className="back" onClick={onBack}>Back</button>
       </div>

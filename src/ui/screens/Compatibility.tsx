@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { STEPS } from '../../logic/steps'
 import type { Catalog, StepId } from '../../logic/types'
 import { stepClass } from '../stepTheme'
+import { Logo } from '../Logo'
 
 interface CompatibilityProps {
   catalog: Catalog
@@ -36,6 +37,7 @@ export function Compatibility({ catalog, optionName, stepId, initialChecked, exc
   return (
     <div className={stepClass(stepId)}>
       <div className="top">
+        <Logo />
         <h1>{optionName}</h1>
         <button className="back" onClick={onBack}>&lsaquo; Back</button>
       </div>

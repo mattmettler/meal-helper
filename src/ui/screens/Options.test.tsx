@@ -32,6 +32,15 @@ function renderOptions(reminder: ReminderState = noReminder, handlers: Partial<P
 }
 
 describe('Options', () => {
+  it('shows the kestrel logo in the header from a local asset', () => {
+    const { container } = render(
+      <Options catalog={catalog} onOpenOption={() => {}} onAdd={() => {}} onOpenHidden={() => {}} onOpenBackup={() => {}} reminder={noReminder} />,
+    )
+    const logo = container.querySelector('.top img.logo')
+    expect(logo).toHaveAttribute('src', expect.stringMatching(/^\/.*pwa-64x64\.png$/))
+    expect(logo).toHaveAttribute('alt', '')
+  })
+
   it('groups visible options under their step', () => {
     renderOptions()
     const starch = screen.getByText('Starch/Base').closest('.optgroup') as HTMLElement
