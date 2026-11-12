@@ -78,7 +78,7 @@ button { font: inherit; color: inherit; }
 .tab span { display: block; font-size: 20px; }
 .tab.on { color: var(--ink); }
 
-.top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; min-height: 44px; }
 .top h1 { margin: 0; }
 .logo { width: 34px; height: 34px; flex: none; border-radius: 10px; background: #fff; box-shadow: var(--shadow); padding: 2px; }
 .back {
