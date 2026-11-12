@@ -26,6 +26,18 @@ async function enabledSaveBackupFile() {
   return button
 }
 
+// Passthrough spy that counts full backup reads. exportBackup is the only caller that
+// reads savedMeals from inside a function named exportBackup, so the call stack identifies it.
+function countBackupReads() {
+  const original = db.savedMeals.toArray.bind(db.savedMeals)
+  let reads = 0
+  const spy = vi.spyOn(db.savedMeals, 'toArray').mockImplementation((...args: Parameters<typeof original>) => {
+    if (new Error().stack?.includes('exportBackup')) reads += 1
+    return original(...args)
+  })
+  return { reads: () => reads, stop: () => spy.mockRestore() }
+}
+
 describe('App', () => {
   afterEach(async () => {
     await Promise.all(db.tables.map(table => table.clear()))
@@ -165,6 +177,51 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Build a meal' })).toBeVisible()
     expect(screen.queryByText('Clashes you set')).not.toBeInTheDocument()
     expect(screen.queryByText('Counting your data...')).not.toBeInTheDocument()
+  })
+
+  it('reads the backup only when the export screen opens, never at startup or on edits', async () => {
+    const user = userEvent.setup()
+    const counter = countBackupReads()
+    try {
+      render(<App />)
+      await screen.findByRole('heading', { name: 'Build a meal' })
+      expect(counter.reads()).toBe(0)
+
+      for (let step = 0; step < 2; step++) {
+        await user.click(document.querySelector<HTMLButtonElement>('.chip')!)
+        await user.click(screen.getByRole('button', { name: 'Next' }))
+      }
+      for (let step = 0; step < 3; step++) await user.click(screen.getByRole('button', { name: 'Skip' }))
+      await user.click(screen.getByRole('button', { name: 'Finish' }))
+      await user.click(screen.getByRole('button', { name: 'Save this meal' }))
+      await screen.findByRole('heading', { name: 'Saved meals' })
+      await user.click(await screen.findByRole('button', { name: /^Favorite / }))
+      await screen.findByRole('button', { name: /^Unfavorite / })
+
+      await user.click(screen.getByRole('button', { name: /Options/ }))
+      const optionButton = document.querySelector<HTMLButtonElement>('.mini')!
+      const optionName = optionButton.textContent!
+      await user.click(optionButton)
+      await user.type(screen.getByLabelText(`Add a tip for ${optionName}`), 'Warm it first')
+      await user.click(screen.getByRole('button', { name: 'Add tip' }))
+      await screen.findByText('Warm it first')
+      await user.click(screen.getByRole('button', { name: 'Hide this option' }))
+      await screen.findByRole('heading', { name: 'Your options' })
+      await screen.findByRole('button', { name: /Hidden options \(1\)/ })
+      expect(counter.reads()).toBe(0)
+
+      await user.click(screen.getByRole('button', { name: 'Save a backup' }))
+      await screen.findByText('Custom options')
+      expect(counter.reads()).toBe(1)
+
+      await user.click(screen.getByRole('button', { name: /‹ Options/ }))
+      expect(counter.reads()).toBe(1)
+      await user.click(screen.getByRole('button', { name: 'Save a backup' }))
+      await screen.findByText('Custom options')
+      expect(counter.reads()).toBe(2)
+    } finally {
+      counter.stop()
+    }
   })
 
   it('opens the export screen with counts that match the data, and Back returns to Options', async () => {

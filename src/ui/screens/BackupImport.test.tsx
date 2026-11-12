@@ -158,4 +158,15 @@ describe('BackupImport', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't read your data. Try again?")
     expect(screen.queryByRole('button', { name: 'Replace my data' })).not.toBeInTheDocument()
   })
+
+  it('ignores a late current count after Cancel and stays on choosing a file', async () => {
+    let finish: (value: typeof currentSummary) => void = () => {}
+    renderImport(undefined, () => new Promise(resolve => { finish = resolve }))
+    await chooseFile(serializeBackup(backup))
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }))
+    await act(async () => { finish(currentSummary) })
+    expect(screen.getByLabelText('Choose a backup file')).toBeInTheDocument()
+    expect(document.querySelector('.warn')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Replace my data' })).not.toBeInTheDocument()
+  })
 })
