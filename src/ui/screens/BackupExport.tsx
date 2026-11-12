@@ -27,6 +27,7 @@ export function BackupExport({ loadSummary, lastBackupAt, fileName, onSave, onBa
     )
     return () => { cancelled = true }
     // loadSummary is deliberately not a dependency: the counts are read once per open (or retry)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countAttempt])
 
   function countAgain() {
