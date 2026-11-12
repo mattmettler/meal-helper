@@ -125,7 +125,7 @@ Bottom tab bar: Build, Saved, Options.
 - **Build**: one step at a time, progress indicator ("Step 3 of 6"), tappable option cards in a two-column grid (bold name, with the option's optional note in smaller text underneath), Back keeps picks, Next doubles as Skip when nothing is picked. After step 6, validate. Failure shows the message and resets. Success goes to Result. Build state is in memory only.
 - **Result**: name, picks grouped by step with tips inline under each option, editable name field (pre-filled), Save, Discard.
 - **Saved**: list ordered favorites first then newest. Heart toggle per row. Tapping a row opens a read-only view of the snapshot with a Delete button behind a confirm.
-- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add a tip to any option and delete tips you added, edit the note and clashes on your own options, delete (hide) any option, "Hidden options" list to restore, Export, Import, and a "last backed up N days ago" note.
+- **Options**: options grouped by step. Add option (name and an optional short note, then the compatibility checklist), add a tip to any option and delete tips you added, edit the note and clashes on your own options, delete (hide) any option, "Hidden options" list to restore, Export, Import, and a "last backed up N days ago" note. At the very bottom, below the backup tile, small centered credit text in two lines separated by a little space: "Icon image from vecteezy.com" and "Made by Matt for kestrel <3".
 
 ### 5.1 Visual design
 
