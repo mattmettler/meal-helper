@@ -252,6 +252,16 @@ describe('Build', () => {
     expect(onSave.mock.calls[1][0].name).toBe('Friday meal')
   })
 
+  it('keeps the check mark out of the accessible name, selected or not', async () => {
+    const user = renderBuild()
+    expect(screen.getByRole('button', { name: /^Rice\s*fluffy$/ })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Pasta' })).toHaveAttribute('aria-pressed', 'false')
+    await pick(user, 'Pasta')
+    expect(screen.getByRole('button', { name: 'Pasta' })).toHaveAttribute('aria-pressed', 'true')
+    const check = screen.getByRole('button', { name: 'Pasta' }).querySelector('.check')
+    expect(check).toHaveAttribute('aria-hidden', 'true')
+  })
+
   describe('scroll area and pinned button row', () => {
     const scroller = () => document.querySelector<HTMLElement>('.panel-scroll')
 

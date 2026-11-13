@@ -117,6 +117,7 @@ export function Build({ catalog, onSave }: BuildProps) {
               aria-pressed={stepPicks.includes(option.id)}
               onClick={() => toggle(option.id)}
             >
+              <span className="check" aria-hidden="true">✓</span>
               <b>{option.name}</b>
               {option.note && <small>{option.note}</small>}
             </button>
