@@ -334,6 +334,40 @@ describe('App', () => {
       expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
     })
 
+    it('returns Options to its home after visiting another tab', async () => {
+      const user = userEvent.setup()
+      await addCustomOption(db, { stepId: 'starch', name: 'Teff test' })
+      render(<App />)
+      await openTab(user, 'Options')
+      await user.click(await screen.findByRole('button', { name: /Teff test/ }))
+      expect(screen.getByLabelText('Short note')).toBeVisible()
+      await openTab(user, 'Build')
+      await openTab(user, 'Options')
+      expect(screen.getByRole('heading', { name: 'Your options' })).toBeVisible()
+    })
+
+    it('discards a half-typed add flow when leaving Options', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await openTab(user, 'Options')
+      await user.click((await screen.findAllByRole('button', { name: '+ Add an option' }))[0])
+      await user.type(screen.getByLabelText('Name'), 'Half typed')
+      await openTab(user, 'Build')
+      await openTab(user, 'Options')
+      expect(screen.getByRole('heading', { name: 'Your options' })).toBeVisible()
+      expect(screen.queryByLabelText('Name')).not.toBeInTheDocument()
+    })
+
+    it('stays on an option detail when the Options tab is tapped again', async () => {
+      const user = userEvent.setup()
+      await addCustomOption(db, { stepId: 'starch', name: 'Teff test' })
+      render(<App />)
+      await openTab(user, 'Options')
+      await user.click(await screen.findByRole('button', { name: /Teff test/ }))
+      await openTab(user, 'Options')
+      expect(screen.getByLabelText('Short note')).toBeVisible()
+    })
+
     it('stays on a saved meal when the Saved tab is tapped again', async () => {
       const user = userEvent.setup()
       await saveMeal(db, aMeal('Friday Meal'))

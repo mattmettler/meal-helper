@@ -67,6 +67,7 @@ export function App() {
   const changeTab = (next: Tab) => {
     if (next === tab) return
     if (tab === 'saved') setOpenMealId(null)
+    if (tab === 'options') setOptionsView({ screen: 'home' })
     setTab(next)
   }
   const clashEditOption =optionsView.screen === 'editClashes'
