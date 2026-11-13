@@ -36,6 +36,12 @@ function renderIt(optionId: string, handlers: Partial<Parameters<typeof OptionDe
 }
 
 describe('OptionDetail for a custom option', () => {
+  it('labels the option as custom', () => {
+    renderIt('farro')
+    expect(screen.getByText('custom')).toBeInTheDocument()
+    expect(screen.queryByText('your own')).not.toBeInTheDocument()
+  })
+
   it('shows an editable note with the counter and saves it', async () => {
     const onSaveNote = vi.fn()
     renderIt('farro', { onSaveNote })

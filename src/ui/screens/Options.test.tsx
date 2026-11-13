@@ -53,13 +53,15 @@ describe('Options', () => {
     expect(screen.queryByText('Old Greens')).not.toBeInTheDocument()
   })
 
-  it('marks custom options as your own', () => {
+  it('marks custom options with a dashed pill and screen-reader-only text, not a visible badge', () => {
     renderOptions()
-    expect(screen.getByRole('button', { name: /Farro/ })).toHaveTextContent('your own')
-    expect(screen.getByRole('button', { name: /Brown rice/ })).not.toHaveTextContent('your own')
-    const marker = screen.getByRole('button', { name: /Farro/ }).querySelector('.badge')
-    expect(marker).toHaveTextContent('your own')
-
+    const farro = screen.getByRole('button', { name: 'Farro custom' })
+    expect(farro).toHaveClass('custom')
+    expect(farro.querySelector('.badge')).toBeNull()
+    expect(farro.querySelector('.visually-hidden')).toHaveTextContent('custom')
+    const rice = screen.getByRole('button', { name: 'Brown rice' })
+    expect(rice).not.toHaveClass('custom')
+    expect(rice).not.toHaveTextContent('custom')
   })
 
   it('opens an option and adds one for a step', async () => {

@@ -29,6 +29,8 @@ body {
 
 [hidden] { display: none !important; }
 
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 button { font: inherit; color: inherit; }
 
 .step-starch  { --c: var(--starch);  --cd: var(--starch-d); }
