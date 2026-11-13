@@ -70,7 +70,7 @@ export function App() {
     if (tab === 'options') setOptionsView({ screen: 'home' })
     setTab(next)
   }
-  const clashEditOption =optionsView.screen === 'editClashes'
+  const clashEditOption = optionsView.screen === 'editClashes'
     ? catalog.options.find(o => o.id === optionsView.optionId)
     : undefined
 

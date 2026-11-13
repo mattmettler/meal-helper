@@ -17,6 +17,6 @@ describe('screen scrolling layout', () => {
   })
 
   it('pins the button row in place rather than sticking it inside the scrolling content', () => {
-    expect(propertyOf('.footer.pinned', 'position')).not.toBe('sticky')
+    expect(propertyOf('.footer.pinned', 'position')).toBe('static')
   })
 })
