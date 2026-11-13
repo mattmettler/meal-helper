@@ -63,7 +63,13 @@ export function App() {
     await importBackup(db, file)
     setBuildKey(key => key + 1)
   }
-  const clashEditOption = optionsView.screen === 'editClashes'
+  // Build keeps its place; Saved and Options start from their home screen each time you come back.
+  const changeTab = (next: Tab) => {
+    if (next === tab) return
+    if (tab === 'saved') setOpenMealId(null)
+    setTab(next)
+  }
+  const clashEditOption =optionsView.screen === 'editClashes'
     ? catalog.options.find(o => o.id === optionsView.optionId)
     : undefined
 
@@ -178,7 +184,7 @@ export function App() {
           )}
         </section>
       </main>
-      <TabBar tab={tab} onChange={setTab} />
+      <TabBar tab={tab} onChange={changeTab} />
     </div>
   )
 }

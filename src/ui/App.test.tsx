@@ -320,6 +320,48 @@ describe('App', () => {
     expect(await db.savedMeals.count()).toBe(0)
   })
 
+  describe('tab places', () => {
+    it('returns Saved to its list after visiting another tab', async () => {
+      const user = userEvent.setup()
+      await saveMeal(db, aMeal('Friday Meal'))
+      render(<App />)
+      await openTab(user, 'Saved')
+      await user.click(await screen.findByRole('button', { name: /^Friday Meal/ }))
+      expect(screen.getByRole('button', { name: 'Delete' })).toBeVisible()
+      await openTab(user, 'Build')
+      await openTab(user, 'Saved')
+      expect(screen.getByRole('heading', { name: 'Saved meals' })).toBeVisible()
+      expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    })
+
+    it('stays on a saved meal when the Saved tab is tapped again', async () => {
+      const user = userEvent.setup()
+      await saveMeal(db, aMeal('Friday Meal'))
+      render(<App />)
+      await openTab(user, 'Saved')
+      await user.click(await screen.findByRole('button', { name: /^Friday Meal/ }))
+      await openTab(user, 'Saved')
+      expect(screen.getByRole('button', { name: 'Delete' })).toBeVisible()
+    })
+
+    it('keeps Build on its step and picks across round trips through other tabs', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('heading', { name: 'Build a meal' })
+      await user.click(screen.getAllByRole('button', { pressed: false })[0])
+      await user.click(screen.getByRole('button', { name: 'Next' }))
+      const pick = screen.getAllByRole('button', { pressed: false })[0]
+      await user.click(pick)
+      const pickName = pick.textContent
+      for (const other of ['Saved', 'Options', 'Saved']) {
+        await openTab(user, other)
+        await openTab(user, 'Build')
+        expect(screen.getByText(/Step 2 of/)).toBeVisible()
+        expect(screen.getByRole('button', { pressed: true })).toHaveTextContent(pickName!)
+      }
+    })
+  })
+
   it('adds a custom option with a clash through the add flow', async () => {
     const user = userEvent.setup()
     render(<App />)
