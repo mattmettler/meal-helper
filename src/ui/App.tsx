@@ -77,10 +77,10 @@ export function App() {
   return (
     <div className="app">
       <main className="screen">
-        <section hidden={tab !== 'build'}>
+        <section className="panel" hidden={tab !== 'build'}>
           <Build key={buildKey} catalog={catalog} onSave={async meal => { await saveMeal(db, meal); setTab('saved') }} />
         </section>
-        <section hidden={tab !== 'saved'}>
+        <section className="panel-scroll" hidden={tab !== 'saved'}>
           {openMeal ? (
             <SavedDetail
               meal={openMeal}
@@ -96,7 +96,7 @@ export function App() {
             />
           )}
         </section>
-        <section hidden={tab !== 'options'}>
+        <section className="panel-scroll" hidden={tab !== 'options'}>
           {optionsView.screen === 'add' && (
             <OptionAdd
               initialStepId={optionsView.stepId}
