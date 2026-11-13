@@ -262,6 +262,17 @@ describe('Build', () => {
     expect(check).toHaveAttribute('aria-hidden', 'true')
   })
 
+  it('scrolls back to the top when the step changes', async () => {
+    const user = renderBuild()
+    const area = document.querySelector<HTMLElement>('.panel-scroll')!
+    area.scrollTop = 120
+    await pick(user, 'Skip')
+    expect(area.scrollTop).toBe(0)
+    area.scrollTop = 80
+    await pick(user, 'Skip')
+    expect(area.scrollTop).toBe(0)
+  })
+
   describe('scroll area and pinned button row', () => {
     const scroller = () => document.querySelector<HTMLElement>('.panel-scroll')
 

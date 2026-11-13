@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { TOO_THIN_MESSAGE } from '../../logic/copy'
 import { availableOptions, prunePicks } from '../../logic/filtering'
 import { buildMeal } from '../../logic/meal'
@@ -23,6 +23,13 @@ export function Build({ catalog, onSave }: BuildProps) {
   const [saveFailed, setSaveFailed] = useState(false)
   const [saving, setSaving] = useState(false)
   const picks = useMemo(() => prunePicks(catalog, rawPicks), [catalog, rawPicks])
+
+  const scrollArea = useRef<HTMLDivElement>(null)
+
+  // The same scroll element is reused across steps and phases, so start each at the top.
+  useEffect(() => {
+    if (scrollArea.current) scrollArea.current.scrollTop = 0
+  }, [stepIndex, phase])
 
   const step = STEPS[stepIndex]
   const options = availableOptions(catalog, step.id, picks)
@@ -92,7 +99,7 @@ export function Build({ catalog, onSave }: BuildProps) {
 
   return (
     <div className={`${stepClass(step.id)} panel`}>
-      <div className="panel-scroll">
+      <div className="panel-scroll" ref={scrollArea}>
         <div className="top">
           <Logo />
           <h1>Build a meal</h1>
