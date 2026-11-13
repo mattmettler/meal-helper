@@ -63,6 +63,13 @@ export function App() {
     await importBackup(db, file)
     setBuildKey(key => key + 1)
   }
+  // Build keeps its place; Saved and Options start from their home screen each time you come back.
+  const changeTab = (next: Tab) => {
+    if (next === tab) return
+    if (tab === 'saved') setOpenMealId(null)
+    if (tab === 'options') setOptionsView({ screen: 'home' })
+    setTab(next)
+  }
   const clashEditOption = optionsView.screen === 'editClashes'
     ? catalog.options.find(o => o.id === optionsView.optionId)
     : undefined
@@ -70,10 +77,10 @@ export function App() {
   return (
     <div className="app">
       <main className="screen">
-        <section hidden={tab !== 'build'}>
+        <section className="panel" hidden={tab !== 'build'}>
           <Build key={buildKey} catalog={catalog} onSave={async meal => { await saveMeal(db, meal); setTab('saved') }} />
         </section>
-        <section hidden={tab !== 'saved'}>
+        <section className="panel-scroll" hidden={tab !== 'saved'}>
           {openMeal ? (
             <SavedDetail
               meal={openMeal}
@@ -89,7 +96,7 @@ export function App() {
             />
           )}
         </section>
-        <section hidden={tab !== 'options'}>
+        <section className="panel-scroll" hidden={tab !== 'options'}>
           {optionsView.screen === 'add' && (
             <OptionAdd
               initialStepId={optionsView.stepId}
@@ -178,7 +185,7 @@ export function App() {
           )}
         </section>
       </main>
-      <TabBar tab={tab} onChange={setTab} />
+      <TabBar tab={tab} onChange={changeTab} />
     </div>
   )
 }

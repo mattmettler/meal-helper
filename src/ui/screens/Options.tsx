@@ -37,7 +37,8 @@ export function Options({ catalog, onOpenOption, onAdd, onOpenHidden, onExport, 
                 onClick={() => onOpenOption(option.id)}
               >
                 {option.name}
-                {option.isCustom && <span className="badge"> your own</span>}
+                {/* The space sits outside the hidden span: the accessible name trims a leading space inside it ("Farrocustom"). */}
+                {option.isCustom && <>{' '}<span className="visually-hidden">custom</span></>}
               </button>
             ))}
           </div>

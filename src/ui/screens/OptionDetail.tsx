@@ -79,7 +79,7 @@ export function OptionDetail({
       </div>
       <div className="card">
         <span className="group-label">{stepName}</span>
-        <span className={`badge ${option.isCustom ? '' : 'solid'}`}>{option.isCustom ? 'your own' : 'built in'}</span>
+        <span className={`badge ${option.isCustom ? '' : 'solid'}`}>{option.isCustom ? 'custom' : 'built in'}</span>
         {option.isCustom ? (
           <>
             <label className="small" htmlFor="option-note">Short note</label>

@@ -62,6 +62,7 @@ export function OptionAdd({ initialStepId = 'starch', initialName = '', initialN
         <div className="label small">How it will look</div>
         <div className="chips grid">
           <div className="chip selected">
+            <span className="check" aria-hidden="true">✓</span>
             <b>{name.trim() || 'Your option'}</b>
             {note.trim() && <small>{note.trim()}</small>}
           </div>

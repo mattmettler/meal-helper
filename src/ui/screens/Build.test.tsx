@@ -251,4 +251,69 @@ describe('Build', () => {
     expect(onSave).toHaveBeenCalledTimes(2)
     expect(onSave.mock.calls[1][0].name).toBe('Friday meal')
   })
+
+  it('keeps the check mark out of the accessible name, selected or not', async () => {
+    const user = renderBuild()
+    expect(screen.getByRole('button', { name: /^Rice\s*fluffy$/ })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Pasta' })).toHaveAttribute('aria-pressed', 'false')
+    await pick(user, 'Pasta')
+    expect(screen.getByRole('button', { name: 'Pasta' })).toHaveAttribute('aria-pressed', 'true')
+    const check = screen.getByRole('button', { name: 'Pasta' }).querySelector('.check')
+    expect(check).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('scrolls back to the top when the step changes', async () => {
+    const user = renderBuild()
+    const area = document.querySelector<HTMLElement>('.panel-scroll')!
+    area.scrollTop = 120
+    await pick(user, 'Skip')
+    expect(area.scrollTop).toBe(0)
+    area.scrollTop = 80
+    await pick(user, 'Skip')
+    expect(area.scrollTop).toBe(0)
+  })
+
+  describe('scroll area and pinned button row', () => {
+    const scroller = () => document.querySelector<HTMLElement>('.panel-scroll')
+
+    it('keeps the primary button outside the scroll area while building, with the content inside it', () => {
+      renderBuild()
+      const area = scroller()!
+      expect(area).not.toBeNull()
+      const primary = screen.getByRole('button', { name: 'Skip' })
+      expect(area).not.toContainElement(primary)
+      expect(primary.closest('.footer')).not.toBeNull()
+      expect(area).toContainElement(screen.getByRole('heading', { name: 'Build a meal' }))
+      expect(area).toContainElement(screen.getByText('Step 1 of 6'))
+      expect(area).toContainElement(screen.getByRole('heading', { name: 'Starch/Base' }))
+      expect(area).toContainElement(screen.getByRole('button', { name: /^Rice/ }))
+      expect(area).toContainElement(document.querySelector<HTMLElement>('.progress'))
+    })
+
+    it('keeps the pinned row the same on every step', async () => {
+      const user = renderBuild()
+      for (let i = 0; i < 5; i++) {
+        await pick(user, /^(Next|Skip)$/)
+        expect(scroller()).not.toContainElement(document.querySelector<HTMLElement>('.footer'))
+      }
+      expect(scroller()).not.toContainElement(screen.getByRole('button', { name: 'Finish' }))
+    })
+
+    it('has no pinned row on the too-thin screen and scrolls all of it', async () => {
+      const user = renderBuild()
+      await finishWith(user, [/^Rice/])
+      expect(document.querySelector('.footer')).toBeNull()
+      expect(scroller()).toContainElement(screen.getByText(TOO_THIN_MESSAGE))
+      expect(scroller()).toContainElement(screen.getByRole('button', { name: 'Start over' }))
+    })
+
+    it('has no pinned row on the result screen and scrolls all of it', async () => {
+      const user = renderBuild()
+      await finishWith(user, [/^Rice/, 'Kale'])
+      expect(document.querySelector('.footer')).toBeNull()
+      expect(scroller()).toContainElement(screen.getByRole('heading', { name: 'Your meal' }))
+      expect(scroller()).toContainElement(screen.getByRole('button', { name: 'Save this meal' }))
+      expect(scroller()).toContainElement(screen.getByRole('button', { name: 'Discard' }))
+    })
+  })
 })

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { TOO_THIN_MESSAGE } from '../../logic/copy'
 import { availableOptions, prunePicks } from '../../logic/filtering'
 import { buildMeal } from '../../logic/meal'
@@ -23,6 +23,13 @@ export function Build({ catalog, onSave }: BuildProps) {
   const [saveFailed, setSaveFailed] = useState(false)
   const [saving, setSaving] = useState(false)
   const picks = useMemo(() => prunePicks(catalog, rawPicks), [catalog, rawPicks])
+
+  const scrollArea = useRef<HTMLDivElement>(null)
+
+  // The same scroll element is reused across steps and phases, so start each at the top.
+  useEffect(() => {
+    if (scrollArea.current) scrollArea.current.scrollTop = 0
+  }, [stepIndex, phase])
 
   const step = STEPS[stepIndex]
   const options = availableOptions(catalog, step.id, picks)
@@ -64,22 +71,26 @@ export function Build({ catalog, onSave }: BuildProps) {
 
   if (phase === 'result') {
     return (
-      <Result
-        meal={buildMeal(catalog, picks)}
-        onSave={save}
-        saveFailed={saveFailed}
-        saving={saving}
-        onDiscard={startOver}
-      />
+      <div className="panel-scroll">
+        <Result
+          meal={buildMeal(catalog, picks)}
+          onSave={save}
+          saveFailed={saveFailed}
+          saving={saving}
+          onDiscard={startOver}
+        />
+      </div>
     )
   }
 
   if (phase === 'too-thin') {
     return (
-      <div className="center">
-        <Logo large />
-        <h2>{TOO_THIN_MESSAGE}</h2>
-        <button className="btn step-protein" onClick={startOver}>Start over</button>
+      <div className="panel-scroll">
+        <div className="center">
+          <Logo large />
+          <h2>{TOO_THIN_MESSAGE}</h2>
+          <button className="btn step-protein" onClick={startOver}>Start over</button>
+        </div>
       </div>
     )
   }
@@ -87,37 +98,40 @@ export function Build({ catalog, onSave }: BuildProps) {
   const primaryLabel = isLast ? 'Finish' : stepPicks.length ? 'Next' : 'Skip'
 
   return (
-    <div className={stepClass(step.id)}>
-      <div className="top">
-        <Logo />
-        <h1>Build a meal</h1>
-        {stepIndex > 0 && <button className="back" onClick={() => setStepIndex(stepIndex - 1)}>&lsaquo; Back</button>}
+    <div className={`${stepClass(step.id)} panel`}>
+      <div className="panel-scroll" ref={scrollArea}>
+        <div className="top">
+          <Logo />
+          <h1>Build a meal</h1>
+          {stepIndex > 0 && <button className="back" onClick={() => setStepIndex(stepIndex - 1)}>&lsaquo; Back</button>}
+        </div>
+        <div className="progress">
+          {STEPS.map((s, i) => (
+            <i key={s.id} className={`${stepClass(s.id)} ${i < stepIndex ? 'done' : i === stepIndex ? 'now' : ''}`} />
+          ))}
+        </div>
+        <div className="stepcount">Step {stepIndex + 1} of {STEPS.length}</div>
+        <div className="bubble">
+          <h2>{step.name}</h2>
+          <p>{step.multi ? 'Pick as many as you like, or skip.' : 'Pick one, or skip.'}</p>
+        </div>
+        {options.length === 0 && <p className="nothing-fits">Nothing fits with your picks, skip ahead</p>}
+        <div className="chips grid">
+          {options.map(option => (
+            <button
+              key={option.id}
+              className="chip"
+              aria-pressed={stepPicks.includes(option.id)}
+              onClick={() => toggle(option.id)}
+            >
+              <span className="check" aria-hidden="true">✓</span>
+              <b>{option.name}</b>
+              {option.note && <small>{option.note}</small>}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="progress">
-        {STEPS.map((s, i) => (
-          <i key={s.id} className={`${stepClass(s.id)} ${i < stepIndex ? 'done' : i === stepIndex ? 'now' : ''}`} />
-        ))}
-      </div>
-      <div className="stepcount">Step {stepIndex + 1} of {STEPS.length}</div>
-      <div className="bubble">
-        <h2>{step.name}</h2>
-        <p>{step.multi ? 'Pick as many as you like, or skip.' : 'Pick one, or skip.'}</p>
-      </div>
-      {options.length === 0 && <p className="nothing-fits">Nothing fits with your picks, skip ahead</p>}
-      <div className="chips grid">
-        {options.map(option => (
-          <button
-            key={option.id}
-            className="chip"
-            aria-pressed={stepPicks.includes(option.id)}
-            onClick={() => toggle(option.id)}
-          >
-            <b>{option.name}</b>
-            {option.note && <small>{option.note}</small>}
-          </button>
-        ))}
-      </div>
-      <div className="footer">
+      <div className="footer pinned">
         <button className="btn" onClick={advance}>{primaryLabel}</button>
       </div>
     </div>
